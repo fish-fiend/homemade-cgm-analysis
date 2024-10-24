@@ -18,3 +18,11 @@ ma_idek <- clarity_data |>
 
 ggplot(ma_idek, aes(x = date, y = ma_288)) +
   geom_line()
+
+
+# fucking around with git and finding out (good things i hope)
+
+ggplot(tp_cgm, aes(x = date, y = daily_avg)) +
+  geom_point
+  
+
