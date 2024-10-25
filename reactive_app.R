@@ -11,12 +11,11 @@ library(zoo)
 # yeah ik thats a lot of packages
 
 
-# creates the A1C to eAG conversion chart
+# A1C to eAG conversion chart
   conversion_chart <- data.frame(
     eAG = c(126, 133, 140, 147, 154, 161, 169, 176, 183, 190, 197),
     A1C = c(6, 6.25, 6.5, 6.75, 7, 7.25, 7.5, 7.75, 8, 8.25, 8.5)
   )
-
   conversion_chart_gt <- conversion_chart |>
     gt()
 
@@ -45,7 +44,7 @@ ui <- lcarsPage(
 # header section — intro and customizable settings for the plot
   lcarsSweep(reverse = TRUE, color = "#99CCFF",
 
-# as of yet aesthetically pleasing but useless center divider
+# as of yet useless but aesthetically pleasing center divider
     inputColumn(
       lcarsRect(color = "#cc99cc", height = 25, round = c("both")),
       lcarsRect(color = "#EE4444", height = 25, round = c("both")),
@@ -53,7 +52,8 @@ ui <- lcarsPage(
       lcarsRect(color = "#3366cc", height = 25, round = c("both"))
     ),
 
-# yappingggg    
+# yappingggg
+# needed something to fill the space on the left side
     left_inputs = inputColumn(
       div(
         h3("Intro"), 
@@ -77,7 +77,8 @@ ui <- lcarsPage(
       )
     ),
 
-# fun stuff! custom settings for the plot (date range and ideal average range)
+
+# fun stuff! custom inputs for the plot (date range and ideal average range)
     right_inputs = inputColumn(
       lcarsPill(
         title = "GRAPH SETTINGS",
@@ -102,7 +103,6 @@ ui <- lcarsPage(
     chooseSliderSkin("Modern", color = "#cc99cc"),
     left_width = 0.6
   ),
-  
   
 
 # bracket for uploading data
@@ -172,7 +172,7 @@ ui <- lcarsPage(
       )
     ),
     
-# the plot thickens
+# the actual plot itself
     fluidRow(
       column (12, plotOutput("averages_plot_app"))
     ),
@@ -197,9 +197,9 @@ ui <- lcarsPage(
     )
   ),
 
-# credit to the creator of the lcars package I relied on to create this 
+# shoutout to the creator of the lcars package
   div(br(), h6("The aesthetics of this app are based on the LCARS computer interface
-         from star trek because I am an unrepentant nerd. Credit for the theme
+         from Star Trek because I am an unrepentant nerd. Credit for the theme
          and custom widgets goes to Matthew Leonawicz!
          https://github.com/leonawicz/lcars/tree/master?tab=readme-ov-file"))
 )
@@ -208,7 +208,7 @@ ui <- lcarsPage(
 
 
 server <- function(input, output, session) {
-  
+
 
 # first section is for tidying data and creating reactive variables (data frame 
 # to populate my graph with, overall average value to display at the top, dates 
@@ -248,9 +248,26 @@ server <- function(input, output, session) {
     last_date <- averages_inverse$date[1]
   })
   
+
+# second section is for. everything else
+# by which i mean actual outputs
   
-  
-# renders instructions for downloading/uploading raw data (beneath the bracket)  
+# updates the start/end dates of the date range input in the top right based
+# on the reactive variables created above
+  observe({
+    input$data_upload
+    
+    updateDateRangeInput(
+      session,
+      "interval",
+      start = first_date(),
+      end = last_date(),
+      min = first_date(),
+      max = last_date()
+    )
+  })
+
+# renders instructions for downloading/uploading raw data (beneath the bracket)
   output$instructions <- renderUI ({
     if (input$instructions == TRUE){
       div(
@@ -269,48 +286,26 @@ server <- function(input, output, session) {
     }
   })
   
-
-  
 # renders text for the overall average title at the top of the box
   output$overall_average <- renderText ({
     req(input$data_upload)
     paste("OVERALL AVERAGE =", overall_average(), "mg/dL")
   })
   
-  
-  
 # renders the conversion chart
   output$a1c_eag <- renderTable ({
     conversion_chart_gt
   })
  
-  
-  
-# updates the start/end dates of the date range input in the top right based
-# on the reactive variables created above
-  observe({
-    input$data_upload
-    
-    updateDateRangeInput(
-      session,
-      "interval",
-      start = first_date(),
-      end = last_date(),
-      min = first_date(),
-      max = last_date()
-    )
-  })
 
-  
-
-# renders the plot!! 
-# please bear with me
+# the plot thickens 
+# please bear with me its about to get messy
   output$averages_plot_app <- renderPlot({
     
     req(input$data_upload)
     
-  # creates a geom-less plot to function as a base for later plots so that
-  # there's less copy + pasting
+# this part creates a geom-less plot to function as a base for the conditionals 
+# to build on so that there's less copy + pasting
     averages_plot_app <- ggplot(averages(), aes(x = date)) +
       annotate(
         "rect",
@@ -347,10 +342,10 @@ server <- function(input, output, session) {
       )
     
     
-  # tests which buttons have been toggled to determine which extra conditions 
-  # to add to the original plot 
-  # (so far unsuccessful in removing the obvious redundancy in the style 
-  # settings without fucking up the whole thing)
+# this bit tests which buttons have been toggled to determine which extra
+# conditions to add to the original plot 
+# (so far unsuccessful in removing the obvious redundancy in the style 
+# settings without fucking up the whole thing)(sigh)
     if (input$mavg == TRUE & input$davg == TRUE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
@@ -405,9 +400,7 @@ server <- function(input, output, session) {
     }
     
     averages_plot_app
-    
   })
-  
 }
 
 
