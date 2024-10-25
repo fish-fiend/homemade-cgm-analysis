@@ -123,6 +123,7 @@ ui <- lcarsPage(
             buttonLabel = "Import",
             placeholder = "see directions below",
             multiple = TRUE,
+            accept = ".xlsx",
             width = 250
         )
       )
@@ -329,6 +330,7 @@ server <- function(input, output, session) {
       ) +
       scale_x_date(limits = c(input$interval[1], input$interval[2]), date_breaks = "months", date_labels = "%b") +
       scale_y_continuous(limits = c(100, 320), breaks = seq(100,320,20)) +
+#     geom_hline(yintercept = overall_average(), color = "blue", linetype = "dotted", linewidth = 1) +
       scale_color_manual(
         "Method", 
         values = c("#cc6699", "#cc99cc"), 
