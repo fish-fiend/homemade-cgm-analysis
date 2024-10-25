@@ -21,8 +21,8 @@ library(zoo)
 
   
 # function for cleaning up data
-  reshape <- function(cgm_data) {
-    cgm_data[-(1:19),] |>
+  reshape <- function(file) {
+    file[-(1:19),] |>
       mutate(date = as.Date(...2, '%Y-%m-%d'), value = as.numeric(...8)) |>
       select(date, value)
   }
