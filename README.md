@@ -1,4 +1,3 @@
-<br></br>
 ### MOST PRESSING (and hardest to solve) ISSUE:
 The graph's utility is currently limited by the fact that each individual excel sheet a user uploads can only contain at most 90 days worth of data because 
 Dexcom only allows data to be downloaded in 90 day chunks. While 90 days is a decently long time span, I want it to be possible for users to upload up to a 
