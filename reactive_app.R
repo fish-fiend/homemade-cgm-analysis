@@ -24,7 +24,8 @@ library(zoo)
   reshape <- function(file) {
     file[-(1:19),] |>
       mutate(date = as.Date(...2, '%Y-%m-%d'), value = as.numeric(...8)) |>
-      select(date, value)
+      select(date, value) |>
+      filter(!is.na(value))
   }
   
   
@@ -119,7 +120,7 @@ ui <- lcarsPage(
       ),
       column(6,
         fileInput(
-            "data_upload", "",
+            "upload", "",
             buttonLabel = "Import",
             placeholder = "see directions below",
             multiple = TRUE,
@@ -213,39 +214,58 @@ server <- function(input, output, session) {
 
 
 # first section is for tidying data and creating reactive variables (data frame 
-# to populate my graph with, overall average value to display at the top, dates 
+# to populate the graph with, overall average value to display at the top, dates 
 # to automatically adjust the axes)
-  
-# reads the file, cleans it up and calculates averages
-  averages <- eventReactive(input$data_upload, {
-    
-    cgm_data <- read_excel(input$data_upload$datapath)
-    
-    cgm_data$...8[cgm_data$...8 == 'High'] <- '400'
-    cgm_data$...8[cgm_data$...8 == 'Low'] <- '40'
-    
-    cgm_data <- reshape(cgm_data)
-    
-    cgm_averages <- cgm_data |>
+
+  averages <- eventReactive(input$upload, {
+# reads the uploaded files to create a list of data frames with the same names
+# as the original files + ".xlsx"   
+    files <- setNames(
+      lapply(input$upload$datapath, read_excel), 
+      sapply(input$upload$name, basename))
+# tidies up the data    
+    files <- lapply(files, reshape)
+# merges the uploaded files, dependent on the number of inputs     
+    if (length(files) == 1) {
+      all_data <- files[[input$upload$name[[1]] ]]
+    }
+    if (length(files) == 2) {
+      all_data <- files[[input$upload$name[[1]] ]] |>
+        full_join(files[[input$upload$name[[2]] ]], join_by(date, value))
+    }
+    if (length(files) == 3) {
+      all_data <- files[[input$upload$name[[1]] ]] |>
+        full_join(files[[input$upload$name[[2]] ]], join_by(date, value)) |>
+        full_join(files[[input$upload$name[[3]] ]], join_by(date, value))
+    }
+    if (length(files) == 4) {
+      all_data <- files[[input$upload$name[[1]] ]] |>
+        full_join(files[[input$upload$name[[2]] ]], join_by(date, value)) |>
+        full_join(files[[input$upload$name[[3]] ]], join_by(date, value)) |>
+        full_join(files[[input$upload$name[[4]] ]], join_by(date, value))
+    }
+# calculates the daily averages
+    averages <- all_data |>
       group_by(date) |>
       summarize(daily_avg = mean(value))
-    
-    averages <- cgm_averages |>
+# adds a new column for the moving average    
+    averages <- averages |>
       mutate(ma_10 = rollmean(daily_avg, k = 10, fill = NA, align = "right"))
   })
     
+  
 # calculates overall average from available data
-  overall_average <- eventReactive(input$data_upload, {
+  overall_average <- eventReactive(input$upload, {
     overall_average <- round(mean(as.vector(averages()$daily_avg)))
   })
     
 # earliest date of observations 
-  first_date <- eventReactive(input$data_upload, {
+  first_date <- eventReactive(input$upload, {
     averages()$date[1]
   })
     
 # most recent date of observations
-  last_date <- eventReactive(input$data_upload, {
+  last_date <- eventReactive(input$upload, {
     averages_inverse <- arrange(averages(), desc(date))
     last_date <- averages_inverse$date[1]
   })
@@ -257,7 +277,7 @@ server <- function(input, output, session) {
 # updates the start/end dates of the date range input in the top right based
 # on the reactive variables created above
   observe({
-    input$data_upload
+    input$upload
     
     updateDateRangeInput(
       session,
@@ -269,6 +289,7 @@ server <- function(input, output, session) {
     )
   })
 
+  
 # renders instructions for downloading/uploading raw data (beneath the bracket)
   output$instructions <- renderUI ({
     if (input$instructions == TRUE){
@@ -288,11 +309,13 @@ server <- function(input, output, session) {
     }
   })
   
+  
 # renders text for the overall average title at the top of the box
   output$overall_average <- renderText ({
-    req(input$data_upload)
+    req(input$upload)
     paste("OVERALL AVERAGE =", overall_average(), "mg/dL")
   })
+  
   
 # renders the conversion chart
   output$a1c_eag <- renderTable ({
@@ -301,10 +324,10 @@ server <- function(input, output, session) {
  
 
 # the plot thickens 
-# please bear with me its about to get messy
+# its about to get messy
   output$averages_plot_app <- renderPlot({
     
-    req(input$data_upload)
+    req(input$upload)
     
 # this part creates a geom-less plot to function as a base for the conditionals 
 # to build on so that there's less copy + pasting
