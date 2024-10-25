@@ -122,6 +122,7 @@ ui <- lcarsPage(
             "data_upload", "",
             buttonLabel = "Import",
             placeholder = "see directions below",
+            multiple = TRUE,
             width = 250
         )
       )
