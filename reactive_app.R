@@ -8,6 +8,7 @@ library(grid)
 library(png)
 library(readxl)
 library(zoo)
+# yeah ik thats a lot of packages
 
 
 # creates the A1C to eAG conversion chart
@@ -19,13 +20,14 @@ library(zoo)
   conversion_chart_gt <- conversion_chart |>
     gt()
 
-# creates the slider which determines the height of the blue rectangle on the plot
-  slider <- sliderInput(
-    "rect", "'Ideal' Daily Average Upper Limit",
-    min = 110, max = 180,
-    value = c(170),
-    step = 5
-  )
+  
+# function for cleaning up data
+  reshape <- function(cgm_data) {
+    cgm_data[-(1:19),] |>
+      mutate(date = as.Date(...2, '%Y-%m-%d'), value = as.numeric(...8)) |>
+      select(date, value)
+  }
+  
   
 # initial dates for the date range display
   first_date <- Sys.Date() - 90
@@ -90,7 +92,12 @@ ui <- lcarsPage(
         max = last_date
       ),
       div(br()),
-      slider
+      sliderInput(
+        "rect", "'Ideal' Daily Average Upper Limit",
+        min = 110, max = 180,
+        value = c(170),
+        step = 5
+      )
     ),
     chooseSliderSkin("Modern", color = "#cc99cc"),
     left_width = 0.6
