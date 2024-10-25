@@ -349,6 +349,8 @@ server <- function(input, output, session) {
 # conditions to add to the original plot 
 # (so far unsuccessful in removing the obvious redundancy in the style 
 # settings without fucking up the whole thing)(sigh)
+    
+# both lines toggled on
     if (input$mavg == TRUE & input$davg == TRUE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
@@ -362,6 +364,7 @@ server <- function(input, output, session) {
           plot.margin = margin(20, 20, 20, 20)
         )
     }
+# if moving average is toggled on and normal averages is off
     if(input$mavg == TRUE & input$davg == FALSE){
       averages_plot_app <- averages_plot_app + 
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
@@ -375,6 +378,7 @@ server <- function(input, output, session) {
           plot.margin = margin(20, 20, 20, 20)
         )
     }
+# if normal averages is on and moving average is off
     if(input$davg == TRUE & input$mavg == FALSE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
@@ -388,6 +392,7 @@ server <- function(input, output, session) {
           plot.margin = margin(20, 20, 20, 20)
         )
     }
+# if both lines are toggled off
     else {
       averages_plot_app <- averages_plot_app + 
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
@@ -401,7 +406,6 @@ server <- function(input, output, session) {
           plot.margin = margin(20, 20, 20, 20)
         )
     }
-    
     averages_plot_app
   })
 }
