@@ -5,5 +5,6 @@
         then you won't be able to get a complete picture of your data over any timespan greater than 90 days. and examining
         that sort of long-term behaviour is kind of the whole point of this. so this is my most pressing issue
   - make the font more readable
+  - dark mode for the graph
   - extend compatability beyond dexcom to other cgm brands
   - percent of time in range (pie chart perhaps?)
