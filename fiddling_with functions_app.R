@@ -60,8 +60,6 @@ server <- function(input, output, session) {
     
     averages <- averages |>
       mutate(ma_10 = rollmean(daily_avg, k = 10, fill = NA, align = "right"))
-    
-    View(averages)
   })
   
   output$head <- renderTable({
