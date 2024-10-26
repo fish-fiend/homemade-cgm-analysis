@@ -49,7 +49,8 @@ library(stats)
 ui <- lcarsPage(force_uppercase = FALSE,
   
 # title
-  lcarsHeader("B.R.A.T. (Blood-sugar Readings: Average Trends)", 
+# "B.R.A.T. (Blood-sugar Readings: Average Trends)"
+  lcarsHeader("[INSERT TITLE HERE]", 
               color = "#FF9900", 
               title_right = FALSE),
   
@@ -69,11 +70,6 @@ ui <- lcarsPage(force_uppercase = FALSE,
     left_inputs = inputColumn(
       div(
         h3("INTRO"), 
-#        h4("In my own experience as a diabetic, I've found Dexcom's
-#          lack of tools for visualizing longterm blood sugar trends to be 
-#          dissapointing. I intended to create a simple, non-reactive plot of my
-#          own data as an easy way to practive my R skills. It's probably obvious 
-#          that I got a bit carried away. Enjoy!"),
         h4("After data is uploaded, a graph will appear in the box below, as well
           as an overall estimated daily average and bar plot which compares the
           percent of days with an average value within your selected ideal range.
@@ -163,9 +159,9 @@ ui <- lcarsPage(force_uppercase = FALSE,
   
 # box for displaying the plot, toggles, overall average, and conversion chart
   lcarsBox(
-    corners = c(1, 2, 3),
+    corners = c(1, 2, 3, 4),
     sides = c(1, 3, 4),
-    color = c("#CC6699",  "#FF9900",  "#FFCC66",  "#FFCC66"),
+    color = c("#CC6699",  "#FF9900",  "#FFCC66",  "#cc99cc"),
     side_color = c( "#FF9900",  "#000000", "#FFCC66", "#CC6699"),
   
 # displays overall average at the top of the box
@@ -213,13 +209,14 @@ ui <- lcarsPage(force_uppercase = FALSE,
     )
   ),
 
-  lcarsSweep( left_width = 0.4,
-    left_inputs = inputColumn(
-      plotOutput("range_percent")
+  lcarsBox( 
+    corners = c(1, 2, 3, 4),
+    color = c("#9999FF", "#9999FF", "#9999FF", "#9999FF"),
+    sides = c(1, 2, 3, 4),
+    
+    fluidRow(
+      column(5, plotOutput("range_percent"))
     ),
-    inputColumn(
-      lcarsRect(color = "#3366cc", height = 272, width = 150)
-    )
   ),
 
 # shoutout to the creator of the lcars package
@@ -464,16 +461,18 @@ server <- function(input, output, session) {
   
     bar_averages <- bar_averages |>
       mutate(class = "time", in_range = daily_avg) |>
-      mutate(in_range = replace(in_range, in_range > 165, "> 165" )) |>
-      mutate(in_range = replace(in_range, in_range <= 165 & in_range != "> 165", "< 165"))
+      mutate(in_range = replace(in_range, in_range > input$rect, ">" )) |>
+      mutate(in_range = replace(in_range, in_range <= input$rect & in_range != ">", "<"))
     
     
     range_percent <- ggplot(bar_averages, aes(x = class, y = daily_avg, fill = in_range)) +
       geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
       scale_fill_manual(
         values = c("#ffcc66", "#99CCFF" ), 
-        breaks = c("> 165", "< 165"),
-        labels = c("Daily Average > 165 mg/dL", "Daily Average < 165 mg/dL")
+        breaks = c(">", "<"),
+        labels = c(
+          paste("Daily Average >", input$rect, "mg/dL"), 
+          paste("Daily Average <", input$rect, "mg/dL"))
       ) +
       labs(
         caption = "Percentage of Days 'In-Range'",
