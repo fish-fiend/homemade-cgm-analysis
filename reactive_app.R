@@ -8,6 +8,7 @@ library(grid)
 library(png)
 library(readxl)
 library(zoo)
+library(stats)
 # yeah ik thats a lot of packages
 
 
@@ -20,7 +21,7 @@ library(zoo)
     gt()
 
   
-# function for cleaning up data
+# function for removing irrelevant data
   reshape <- function(file) {
     file[-(1:19),] |>
       mutate(date = as.Date(...2, '%Y-%m-%d'), value = as.numeric(...8)) |>
@@ -29,16 +30,16 @@ library(zoo)
   }
   
   
-# initial dates for the date range display
+# starter dates for the date range display
   first_date <- Sys.Date() - 90
   last_date <- Sys.Date()
 
   
 
-ui <- lcarsPage(
+ui <- lcarsPage(force_uppercase = FALSE,
   
 # title
-  lcarsHeader("homemade blood sugar analysis", 
+  lcarsHeader("BRAT (Blood-sugar Readings: Average Trends)", 
               color = "#FF9900", 
               title_right = FALSE),
   
@@ -47,30 +48,32 @@ ui <- lcarsPage(
 
 # as of yet useless but aesthetically pleasing center divider
     inputColumn(
-      lcarsRect(color = "#cc99cc", height = 25, round = c("both")),
-      lcarsRect(color = "#EE4444", height = 25, round = c("both")),
-      lcarsButton("button", "", color = "golden-tanoi"),
-      lcarsRect(color = "#3366cc", height = 25, round = c("both"))
+      lcarsRect(color = "#cc99cc", height = 21, round = c("both")),
+      lcarsRect(color = "#EE4444", height = 21, round = c("both")),
+      lcarsButton("button", "...", color = "golden-tanoi", height = 25),
+      lcarsRect(color = "#3366cc", height = 21, round = c("both"))
     ),
 
 # yappingggg
 # needed something to fill the space on the left side
     left_inputs = inputColumn(
       div(
-        h3("Intro"), 
-        p("In my own experience as a diabetic, I've found Dexcom's
-          lack of tools for visualizing longterm blood sugar trends to be 
-          dissapointing. I intended to create a simple, non-reactive plot of my
-          own data as an easy way to practive my R skills. It's probably obvious 
-          that I got a bit carried away. Enjoy!"),
-        br(),  
-        p("After data is uploaded, a plot will appear in the box below.
-          The blue shaded region on the plot represents the range that you would
-          like your daily average blood sugar to stay within. The
-          breadth of this range is adjustable using the slider to the right.
-          The idea is that the chart of A1C to average blood glucose next to the 
-          graph can be used in conjuction with the 'overall average' value 
-          displayed over the graph to help you determine your ideal range."),
+        h3("INTRO"), 
+#        h4("In my own experience as a diabetic, I've found Dexcom's
+#          lack of tools for visualizing longterm blood sugar trends to be 
+#          dissapointing. I intended to create a simple, non-reactive plot of my
+#          own data as an easy way to practive my R skills. It's probably obvious 
+#          that I got a bit carried away. Enjoy!"),
+        h4("After data is uploaded, a graph will appear in the box below, as well
+          as an overall estimated daily average and bar plot which compares the
+          percent of days with an average value within your selected ideal range.
+          The breadth of this range is adjustable using the slider to the right."),
+        h4("The chart on the right side of the box displays a rough estimate of A1C
+          based on average blood sugar. The overall average displayed at the top
+          of the box will not necessarily be compatible with this chart as A1C 
+          is determined by about the last 90 days of blood sugar behaviour. The 
+          chart exists mainly as a tool to help determine what your ideal range
+          is."),
         br(),
         h6("Disclaimer: Use with your own discretion. I am not a medical 
             professional and this is not a professional tool. Or authorized by 
@@ -200,6 +203,12 @@ ui <- lcarsPage(
     )
   ),
 
+  lcarsSweep( left_width = 0.4,
+    left_inputs = inputColumn(
+      plotOutput("range_percent")
+    )
+  ),
+
 # shoutout to the creator of the lcars package
   div(br(), h6("The aesthetics of this app are based on the LCARS computer interface
          from Star Trek because I am an unrepentant nerd. Credit for the theme
@@ -225,7 +234,8 @@ server <- function(input, output, session) {
       sapply(input$upload$name, basename))
 # tidies up the data    
     files <- lapply(files, reshape)
-# merges the uploaded files, dependent on the number of inputs     
+# merges the uploaded files, dependent on the number of inputs
+# there's probably a prettier way to do this but that's not a high priority rn
     if (length(files) == 1) {
       all_data <- files[[input$upload$name[[1]] ]]
     }
@@ -259,12 +269,12 @@ server <- function(input, output, session) {
     overall_average <- round(mean(as.vector(averages()$daily_avg)))
   })
     
-# earliest date of observations 
+# takes earliest date of observations 
   first_date <- eventReactive(input$upload, {
     averages()$date[1]
   })
     
-# most recent date of observations
+# takes most recent date of observations
   last_date <- eventReactive(input$upload, {
     averages_inverse <- arrange(averages(), desc(date))
     last_date <- averages_inverse$date[1]
@@ -272,7 +282,6 @@ server <- function(input, output, session) {
   
 
 # second section is for. everything else
-# by which i mean actual outputs
   
 # updates the start/end dates of the date range input in the top right based
 # on the reactive variables created above
@@ -289,26 +298,28 @@ server <- function(input, output, session) {
     )
   })
 
-  
 # renders instructions for downloading/uploading raw data (beneath the bracket)
   output$instructions <- renderUI ({
     if (input$instructions == TRUE){
       div(
         br(),
-        p("How to Download Raw CGM Data in the Correct Format"),
-        h6("Step 1: Log into Dexcom Clarity at https://clarity.dexcom.com/). On the
-        far right side of the Overview page, just above the 'Sensor Usage' widget, 
-        is an icon that looks like a spreadsheet with an arrow pointing right."),
-        h6("Step 2: Click that icon, select a date range, then press export. The 
-        data will automatically download in Numbers."),
-        h6("Step 3: Open it in numbers then go to File > Export To > Excel"),
-        h6("Step 4: Name the file whatever you want, then come back here and hit 
-        import!"),
+        h4("HOW TO DOWNLOAD YOUR RAW CGM DATA IN THE CORRECT FORMAT:"),
+        h5("Step 1: Log into Dexcom Clarity (at https://clarity.dexcom.com/). On the
+          far right side of the Overview page, just above the 'Sensor Usage' widget, 
+          is an icon that looks like a spreadsheet with an arrow pointing right."),
+        h5("Step 2: Click that icon, select a date range, then press export. The 
+          data will automatically download in Numbers. 90 days is the automatic
+           date range limit so if you would like to analyze a longer timespan, 
+           you can download multiple 90 day datasets (up to 4) and upload them all 
+           simultaneously to this app."),
+        h5("Step 3: Open it in numbers then go to File > Export To > Excel."),
+        h5("Step 4: Name the file whatever you want, then come back here and hit 
+          import! Hold down command while clicking on files to select 
+          multiple files at once."),
         br()
       )
     }
   })
-  
   
 # renders text for the overall average title at the top of the box
   output$overall_average <- renderText ({
@@ -316,21 +327,18 @@ server <- function(input, output, session) {
     paste("OVERALL AVERAGE =", overall_average(), "mg/dL")
   })
   
-  
 # renders the conversion chart
   output$a1c_eag <- renderTable ({
     conversion_chart_gt
   })
  
-
+  
 # the plot thickens 
 # its about to get messy
   output$averages_plot_app <- renderPlot({
-    
-    req(input$upload)
-    
+     req(input$upload)
 # this part creates a geom-less plot to function as a base for the conditionals 
-# to build on so that there's less copy + pasting
+# so that there's less copy + pasting
     averages_plot_app <- ggplot(averages(), aes(x = date)) +
       annotate(
         "rect",
@@ -353,7 +361,7 @@ server <- function(input, output, session) {
       ) +
       scale_x_date(limits = c(input$interval[1], input$interval[2]), date_breaks = "months", date_labels = "%b") +
       scale_y_continuous(limits = c(100, 320), breaks = seq(100,320,20)) +
-#     geom_hline(yintercept = overall_average(), color = "blue", linetype = "dotted", linewidth = 1) +
+# maybe: geom_hline(yintercept = overall_average(), color = "blue", linetype = "dotted", linewidth = 1) +
       scale_color_manual(
         "Method", 
         values = c("#cc6699", "#cc99cc"), 
@@ -387,7 +395,7 @@ server <- function(input, output, session) {
           plot.margin = margin(20, 20, 20, 20)
         )
     }
-# if moving average is toggled on and normal averages is off
+# moving average is on and normal averages is off
     if(input$mavg == TRUE & input$davg == FALSE){
       averages_plot_app <- averages_plot_app + 
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
@@ -401,7 +409,7 @@ server <- function(input, output, session) {
           plot.margin = margin(20, 20, 20, 20)
         )
     }
-# if normal averages is on and moving average is off
+# normal averages is on and moving average is off
     if(input$davg == TRUE & input$mavg == FALSE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
@@ -415,7 +423,7 @@ server <- function(input, output, session) {
           plot.margin = margin(20, 20, 20, 20)
         )
     }
-# if both lines are toggled off
+# both lines are off (empty plot)
     else {
       averages_plot_app <- averages_plot_app + 
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
@@ -430,6 +438,41 @@ server <- function(input, output, session) {
         )
     }
     averages_plot_app
+  })
+  
+  
+  output$range_percent <- renderPlot({
+    
+    bar_averages <- averages()
+  
+    bar_averages <- bar_averages |>
+      mutate(class = "time", in_range = daily_avg) |>
+      mutate(in_range = replace(in_range, in_range > 165, "> 165" )) |>
+      mutate(in_range = replace(in_range, in_range <= 165 & in_range != "> 165", "< 165"))
+    
+    
+    range_percent <- ggplot(bar_averages, aes(x = class, y = daily_avg, fill = in_range)) +
+      geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
+      scale_fill_manual(
+        values = c("#ffcc66", "#99BBFF" ), 
+        breaks = c("> 165", "< 165"),
+        labels = c("Daily Average > 165 mg/dL", "Daily Average < 165 mg/dL")
+      ) +
+      labs(
+        caption = "Percentage of Days 'In-Range'",
+        x = NULL,
+        y = NULL
+      ) +
+      theme_lcars_dark() +
+      theme(
+        legend.title = element_blank(),
+        plot.caption = element_text(hjust = 0.5, size = 14),
+        axis.title.y = element_text(margin = margin(r = 20)),
+        axis.text.x = element_blank(),
+        plot.margin = margin(32, 32, 32, 32),
+      )
+    
+    range_percent
   })
 }
 
