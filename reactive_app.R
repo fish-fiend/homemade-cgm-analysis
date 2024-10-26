@@ -28,7 +28,17 @@ library(stats)
       select(date, value) |>
       filter(!is.na(value))
   }
+
+# functions for reincorporating extreme readings:
+# replacing the "High" or "Low" values with 400 and 40 to get a slightly more 
+# accurate estimate
+  highs <- function(x) {
+    mutate(x, ...8 = replace(...8, ...8 == "High", "400" ))
+  }
   
+  lows <- function(x) {
+    mutate(x, ...8 = replace(...8, ...8 == "Low", "40" ))
+  }
   
 # starter dates for the date range display
   first_date <- Sys.Date() - 90
@@ -39,7 +49,7 @@ library(stats)
 ui <- lcarsPage(force_uppercase = FALSE,
   
 # title
-  lcarsHeader("BRAT (Blood-sugar Readings: Average Trends)", 
+  lcarsHeader("B.R.A.T. (Blood-sugar Readings: Average Trends)", 
               color = "#FF9900", 
               title_right = FALSE),
   
@@ -206,6 +216,9 @@ ui <- lcarsPage(force_uppercase = FALSE,
   lcarsSweep( left_width = 0.4,
     left_inputs = inputColumn(
       plotOutput("range_percent")
+    ),
+    inputColumn(
+      lcarsRect(color = "#3366cc", height = 272, width = 150)
     )
   ),
 
@@ -232,8 +245,12 @@ server <- function(input, output, session) {
     files <- setNames(
       lapply(input$upload$datapath, read_excel), 
       sapply(input$upload$name, basename))
+# interpolation of values outside of the CGM's range (over 400 and under 40)
+    files <- lapply(files, highs)
+    files <- lapply(files, lows)
 # tidies up the data    
     files <- lapply(files, reshape)
+    
 # merges the uploaded files, dependent on the number of inputs
 # there's probably a prettier way to do this but that's not a high priority rn
     if (length(files) == 1) {
@@ -454,7 +471,7 @@ server <- function(input, output, session) {
     range_percent <- ggplot(bar_averages, aes(x = class, y = daily_avg, fill = in_range)) +
       geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
       scale_fill_manual(
-        values = c("#ffcc66", "#99BBFF" ), 
+        values = c("#ffcc66", "#99CCFF" ), 
         breaks = c("> 165", "< 165"),
         labels = c("Daily Average > 165 mg/dL", "Daily Average < 165 mg/dL")
       ) +
@@ -466,10 +483,10 @@ server <- function(input, output, session) {
       theme_lcars_dark() +
       theme(
         legend.title = element_blank(),
-        plot.caption = element_text(hjust = 0.5, size = 14),
-        axis.title.y = element_text(margin = margin(r = 20)),
+        plot.caption = element_text(hjust = 0.5, size = 16, margin = margin(t = 15)),
+        legend.text = element_text(size = 12),
         axis.text.x = element_blank(),
-        plot.margin = margin(32, 32, 32, 32),
+        plot.margin = margin(32, 28, 28, 32),
       )
     
     range_percent
