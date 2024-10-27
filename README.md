@@ -1,4 +1,4 @@
-### TEST DATA:
+### TEST DATA
   [clarity_1023_0120.xlsx](https://github.com/user-attachments/files/17535653/clarity_1023_0120.xlsx) ...
   [clarity_export_90.xlsx](https://github.com/user-attachments/files/17535655/clarity_export_90.xlsx)
 
@@ -11,7 +11,7 @@ Only new issue is that the graph kinda glitches if you upload two datasets that 
 
 <br></br>
 
-### Upcoming Features: 
+### UPCOMING FEATURES
   - option to change units between mmol/L and mg/dL (currently mg/dL is the only choice)
   - make the font more readable
   - dark mode option for the graph (maybe)
