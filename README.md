@@ -1,8 +1,3 @@
-# DEMO
-![A7373A61-4733-4473-A824-F085C5D8C59F_1_102_o](https://github.com/user-attachments/assets/91d66eef-a387-4b96-baab-0715bd739b50)
-
-<br></br>
-
 ### MOST PRESSING (and hardest to solve) ISSUE — FIXED ☑️
 I finally made it possible for multiple files to be uploaded and analyzed as one dataset!!! ANNNNNDDDDD figured out
 how to turn the indexing/substitution step into a function in order to replace the out-of-range "High" and "Low" values with "400" and "40" <strong>without</strong> 
