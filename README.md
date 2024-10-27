@@ -2,6 +2,8 @@
   [clarity_1023_0120.xlsx](https://github.com/user-attachments/files/17535653/clarity_1023_0120.xlsx) ...
   [clarity_export_90.xlsx](https://github.com/user-attachments/files/17535655/clarity_export_90.xlsx)
 
+<br></br>
+
 ### MOST PRESSING (and hardest to solve) ISSUE — FIXED ☑️
 I finally made it possible for multiple files to be uploaded and analyzed as one dataset!!! ANNNNNDDDDD figured out
 how to turn the indexing/substitution step into a function in order to replace the out-of-range "High" and "Low" values with "400" and "40" <strong>without</strong> 
