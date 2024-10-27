@@ -46,7 +46,8 @@ library(stats)
 
   
 
-ui <- lcarsPage(force_uppercase = FALSE,
+ui <- lcarsPage(force_uppercase = TRUE, 
+
   
 # title
 # "B.R.A.T. (Blood-sugar Readings: Average Trends)"
@@ -61,29 +62,15 @@ ui <- lcarsPage(force_uppercase = FALSE,
     inputColumn(
       lcarsRect(color = "#cc99cc", height = 21, round = c("both")),
       lcarsRect(color = "#EE4444", height = 21, round = c("both")),
-      lcarsButton("button", "...", color = "golden-tanoi", height = 25),
+      lcarsButton("button", "", color = "golden-tanoi", height = 25),
       lcarsRect(color = "#3366cc", height = 21, round = c("both"))
     ),
 
 # yappingggg
 # needed something to fill the space on the left side
     left_inputs = inputColumn(
-      div(
-        h3("INTRO"), 
-        h4("After data is uploaded, a graph will appear in the box below, as well
-          as an overall estimated daily average and bar plot which compares the
-          percent of days with an average value within your selected ideal range.
-          The breadth of this range is adjustable using the slider to the right."),
-        h4("The chart on the right side of the box displays a rough estimate of A1C
-          based on average blood sugar. The overall average displayed at the top
-          of the box will not necessarily be compatible with this chart as A1C 
-          is determined by about the last 90 days of blood sugar behaviour. The 
-          chart exists mainly as a tool to help determine what your ideal range
-          is."),
-        br(),
-        h6("Disclaimer: Use with your own discretion. I am not a medical 
-            professional and this is not a professional tool. Or authorized by 
-            Dexcom. Which is hopefully a non-issue.")
+      column(12,
+        htmlOutput("intro")
       )
     ),
 
@@ -143,7 +130,7 @@ ui <- lcarsPage(force_uppercase = FALSE,
   
 # toggleable instructions below bracket
   fluidRow(
-    column(2,
+    column(3,
         lcarsCheckbox(
           "instructions", "Instructions for Downloading and Uploading Data",
           width = 150,
@@ -312,22 +299,42 @@ server <- function(input, output, session) {
     )
   })
 
+  
+  output$intro <- renderUI ({
+          div(
+        h3("INTRO"), 
+        p("After data is uploaded, a graph will appear in the box below, as well
+          as an overall estimated daily average and bar plot which compares the
+          percent of days with an average value within your selected ideal range.
+          The breadth of this range is adjustable using the slider to the right."),
+        p("The chart on the right side of the box displays a rough estimate of A1C
+          based on average blood sugar. The overall average displayed at the top
+          of the box will not necessarily be compatible with this chart as A1C 
+          is determined by about the last 90 days of blood sugar behaviour. The 
+          chart exists mainly as a reference to help understand the relationship
+          between the abstract analysis and real-life experience."),
+        br(),
+        h6("Disclaimer: Use with your own discretion. I am not a medical 
+            professional and this is not a professional tool. Or authorized by 
+            Dexcom. Which is hopefully a non-issue.")
+      )
+  })
 # renders instructions for downloading/uploading raw data (beneath the bracket)
   output$instructions <- renderUI ({
     if (input$instructions == TRUE){
       div(
         br(),
         h4("HOW TO DOWNLOAD YOUR RAW CGM DATA IN THE CORRECT FORMAT:"),
-        h5("Step 1: Log into Dexcom Clarity (at https://clarity.dexcom.com/). On the
+        p("Step 1: Log into Dexcom Clarity (at https://clarity.dexcom.com/). On the
           far right side of the Overview page, just above the 'Sensor Usage' widget, 
           is an icon that looks like a spreadsheet with an arrow pointing right."),
-        h5("Step 2: Click that icon, select a date range, then press export. The 
+        p("Step 2: Click that icon, select a date range, then press export. The 
           data will automatically download in Numbers. 90 days is the automatic
            date range limit so if you would like to analyze a longer timespan, 
            you can download multiple 90 day datasets (up to 4) and upload them all 
            simultaneously to this app."),
-        h5("Step 3: Open it in numbers then go to File > Export To > Excel."),
-        h5("Step 4: Name the file whatever you want, then come back here and hit 
+        p("Step 3: Open it in numbers then go to File > Export To > Excel."),
+        p("Step 4: Name the file whatever you want, then come back here and hit 
           import! Hold down command while clicking on files to select 
           multiple files at once."),
         br()
@@ -485,7 +492,7 @@ server <- function(input, output, session) {
         plot.caption = element_text(hjust = 0.5, size = 16, margin = margin(t = 15)),
         legend.text = element_text(size = 12),
         axis.text.x = element_blank(),
-        plot.margin = margin(32, 28, 28, 32),
+        plot.margin = margin(28, 28, 28, 32),
       )
     
     range_percent
