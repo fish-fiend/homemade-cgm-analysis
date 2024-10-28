@@ -5,9 +5,9 @@ account: gfournier
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 13129120
-bundleId: 9277602
+bundleId: 9282644
 url: https://gfournier.shinyapps.io/cgm-analysis-longterm/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: cgm_data_process_and_plot.R|fiddling_with functions_app.R|fiddling_with_functions.R|README.md
+ignoredFiles: average_daily_dist.R|cgm_data_process_and_plot.R|fiddling_with functions_app.R|fiddling_with_functions.R|README.md
