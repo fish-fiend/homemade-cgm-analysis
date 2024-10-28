@@ -9,7 +9,7 @@ library(png)
 library(readxl)
 library(zoo)
 library(stats)
-# yeah ik thats a lot of packages
+# a lotttt of packages
 
 
 # A1C to eAG conversion chart
@@ -29,8 +29,8 @@ library(stats)
       filter(!is.na(value))
   }
 
-# functions for reincorporating extreme readings:
-# replacing the "High" or "Low" values with 400 and 40 to get a slightly more 
+# functions for reincorporating extreme readings (preventing NAs)
+# replacing "High" or "Low" values with 400 and 40 to get a slightly more 
 # accurate estimate
   highs <- function(x) {
     mutate(x, ...8 = replace(...8, ...8 == "High", "400" ))
@@ -55,6 +55,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
               color = "#FF9900", 
               title_right = FALSE),
   
+
 # header section — intro and customizable settings for the plot
   lcarsSweep(reverse = TRUE, color = "#99CCFF",
 
@@ -66,7 +67,6 @@ ui <- lcarsPage(force_uppercase = TRUE,
       lcarsRect(color = "#3366cc", height = 21, round = c("both"))
     ),
 
-# yappingggg
 # needed something to fill the space on the left side
     left_inputs = inputColumn(
       column(12,
@@ -74,8 +74,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
       )
     ),
 
-
-# fun stuff! custom inputs for the plot (date range and ideal average range)
+# custom inputs for the plot (date range and ideal average range)
     right_inputs = inputColumn(
       lcarsPill(
         title = "GRAPH SETTINGS",
@@ -97,8 +96,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
         step = 5
       )
     ),
-    chooseSliderSkin("Modern", color = "#cc99cc"),
-    left_width = 0.6
+    chooseSliderSkin("Modern", color = "#cc99cc")
   ),
   
 
@@ -112,7 +110,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
             text = "UPLOAD DATA TO DISPLAY GRAPH:",
             text_size = 17,
             text_color = "#FFFFED"
-          )
+        )
       ),
       column(6,
         fileInput(
@@ -130,10 +128,10 @@ ui <- lcarsPage(force_uppercase = TRUE,
   
 # toggleable instructions below bracket
   fluidRow(
-    column(3,
+    column(8,
         lcarsCheckbox(
           "instructions", "Instructions for Downloading and Uploading Data",
-          width = 150,
+          width = 400,
           value = FALSE
         )
     ),
@@ -196,6 +194,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
     )
   ),
 
+# box for the bar chart (and eventually something else too)
   lcarsBox( 
     corners = c(1, 2, 3, 4),
     color = c("#9999FF", "#9999FF", "#9999FF", "#9999FF"),
@@ -216,27 +215,28 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 
 
+
 server <- function(input, output, session) {
 
-
-# first section is for tidying data and creating reactive variables (data frame 
-# to populate the graph with, overall average value to display at the top, dates 
-# to automatically adjust the axes)
-
+# first section is for tidying data and creating reactive variables 
+  
   averages <- eventReactive(input$upload, {
+    
 # reads the uploaded files to create a list of data frames with the same names
 # as the original files + ".xlsx"   
     files <- setNames(
       lapply(input$upload$datapath, read_excel), 
       sapply(input$upload$name, basename))
+    
 # interpolation of values outside of the CGM's range (over 400 and under 40)
     files <- lapply(files, highs)
     files <- lapply(files, lows)
+    
 # tidies up the data    
     files <- lapply(files, reshape)
     
 # merges the uploaded files, dependent on the number of inputs
-# there's probably a prettier way to do this but that's not a high priority rn
+# there's probably a better way to do this but that's not a high priority rn
     if (length(files) == 1) {
       all_data <- files[[input$upload$name[[1]] ]]
     }
@@ -255,17 +255,19 @@ server <- function(input, output, session) {
         full_join(files[[input$upload$name[[3]] ]], join_by(date, value)) |>
         full_join(files[[input$upload$name[[4]] ]], join_by(date, value))
     }
+    
 # calculates the daily averages
     averages <- all_data |>
       group_by(date) |>
       summarize(daily_avg = mean(value))
+    
 # adds a new column for the moving average    
     averages <- averages |>
       mutate(ma_10 = rollmean(daily_avg, k = 10, fill = NA, align = "right"))
   })
     
   
-# calculates overall average from available data
+# calculates overall average
   overall_average <- eventReactive(input$upload, {
     overall_average <- round(mean(as.vector(averages()$daily_avg)))
   })
@@ -284,6 +286,7 @@ server <- function(input, output, session) {
 
 # second section is for. everything else
   
+  
 # updates the start/end dates of the date range input in the top right based
 # on the reactive variables created above
   observe({
@@ -299,10 +302,10 @@ server <- function(input, output, session) {
     )
   })
 
-  
+#yapppinnggggggg to fill space
   output$intro <- renderUI ({
           div(
-        h3("INTRO"), 
+        h4("INTRO"), 
         p("After data is uploaded, a graph will appear in the box below, as well
           as an overall estimated daily average and bar plot which compares the
           percent of days with an average value within your selected ideal range.
@@ -310,16 +313,14 @@ server <- function(input, output, session) {
         p("The chart on the right side of the box displays a rough estimate of A1C
           based on average blood sugar. The overall average displayed at the top
           of the box will not necessarily be compatible with this chart as A1C 
-          is determined by about the last 90 days of blood sugar behaviour. The 
-          chart exists mainly as a reference to help understand the relationship
-          between the abstract analysis and real-life experience."),
+          is determined by only the last 90 days of blood sugar behaviour."),
         br(),
-        h6("Disclaimer: Use with your own discretion. I am not a medical 
-            professional and this is not a professional tool. Or authorized by 
-            Dexcom. Which is hopefully a non-issue.")
+        h6("Disclaimer: None of the graphics will render unless you upload data first. Also
+           you have to use it at full width or nothing aligns properly. Enjoy! ")
       )
   })
-# renders instructions for downloading/uploading raw data (beneath the bracket)
+  
+# instructions for downloading/uploading raw data (beneath the bracket)
   output$instructions <- renderUI ({
     if (input$instructions == TRUE){
       div(
@@ -342,23 +343,24 @@ server <- function(input, output, session) {
     }
   })
   
-# renders text for the overall average title at the top of the box
+  
+# text for the overall average title at the top of the box
   output$overall_average <- renderText ({
     req(input$upload)
     paste("OVERALL AVERAGE =", overall_average(), "mg/dL")
   })
   
-# renders the conversion chart
+# conversion chart
   output$a1c_eag <- renderTable ({
     conversion_chart_gt
   })
  
   
 # the plot thickens 
-# its about to get messy
   output$averages_plot_app <- renderPlot({
      req(input$upload)
-# this part creates a geom-less plot to function as a base for the conditionals 
+    
+# this first part creates a geom-less plot to function as a base for the conditionals 
 # so that there's less copy + pasting
     averages_plot_app <- ggplot(averages(), aes(x = date)) +
       annotate(
@@ -398,9 +400,9 @@ server <- function(input, output, session) {
     
     
 # this bit tests which buttons have been toggled to determine which extra
-# conditions to add to the original plot 
-# (so far unsuccessful in removing the obvious redundancy in the style 
-# settings without fucking up the whole thing)(sigh)
+# conditions to add to the original empty plot 
+# (so far unsuccessful in removing the obvious redundancy 
+# without fucking up the whole thing)(i don't know why)
     
 # both lines toggled on
     if (input$mavg == TRUE & input$davg == TRUE){
@@ -416,7 +418,7 @@ server <- function(input, output, session) {
           plot.margin = margin(20, 20, 20, 20)
         )
     }
-# moving average is on and normal averages is off
+# moving average on and daily averages off
     if(input$mavg == TRUE & input$davg == FALSE){
       averages_plot_app <- averages_plot_app + 
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
@@ -430,7 +432,7 @@ server <- function(input, output, session) {
           plot.margin = margin(20, 20, 20, 20)
         )
     }
-# normal averages is on and moving average is off
+# daily averages on and moving average off
     if(input$davg == TRUE & input$mavg == FALSE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
@@ -444,7 +446,7 @@ server <- function(input, output, session) {
           plot.margin = margin(20, 20, 20, 20)
         )
     }
-# both lines are off (empty plot)
+# both lines off (empty plot)
     else {
       averages_plot_app <- averages_plot_app + 
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
@@ -462,15 +464,14 @@ server <- function(input, output, session) {
   })
   
   
+# stacked bar chart showing percentage of days in range — adjusts with the slider
   output$range_percent <- renderPlot({
-    
     bar_averages <- averages()
   
     bar_averages <- bar_averages |>
       mutate(class = "time", in_range = daily_avg) |>
       mutate(in_range = replace(in_range, in_range > input$rect, ">" )) |>
       mutate(in_range = replace(in_range, in_range <= input$rect & in_range != ">", "<"))
-    
     
     range_percent <- ggplot(bar_averages, aes(x = class, y = daily_avg, fill = in_range)) +
       geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
@@ -494,8 +495,7 @@ server <- function(input, output, session) {
         axis.text.x = element_blank(),
         plot.margin = margin(28, 28, 28, 32),
       )
-    
-    range_percent
+  range_percent
   })
 }
 
