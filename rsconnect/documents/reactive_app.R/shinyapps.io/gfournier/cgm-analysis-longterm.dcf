@@ -1,13 +1,13 @@
 name: cgm-analysis-longterm
-title: cgm-analysis-longterm
+title: cgm-analysis
 username: gfournier
 account: gfournier
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 13129120
-bundleId: 9267372
+bundleId: 9277602
 url: https://gfournier.shinyapps.io/cgm-analysis-longterm/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: cgm_data_process_and_plot.R|README.md
+ignoredFiles: cgm_data_process_and_plot.R|fiddling_with functions_app.R|fiddling_with_functions.R|README.md
