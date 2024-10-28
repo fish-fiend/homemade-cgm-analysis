@@ -47,7 +47,6 @@ library(stats)
   
 
 ui <- lcarsPage(force_uppercase = TRUE, 
-
   
 # title
 # "B.R.A.T. (Blood-sugar Readings: Average Trends)"
@@ -194,15 +193,24 @@ ui <- lcarsPage(force_uppercase = TRUE,
     )
   ),
 
-# box for the bar chart (and eventually something else too)
+# box for the bar charts
   lcarsBox( 
     corners = c(1, 2, 3, 4),
     color = c("#9999FF", "#9999FF", "#9999FF", "#9999FF"),
     sides = c(1, 2, 3, 4),
-    
+  
+# bar charts displaying distribution of time in range vs out
     fluidRow(
-      column(5, plotOutput("range_percent"))
+      column(1, lcarsRect(color = "#000000")),
+      column(5, plotOutput("range_percent")),
+      column(5, plotOutput("range_time"))
     ),
+
+# upper and lower limit selectors for the charts
+    right_inputs = inputColumn(
+      numericInput("high_lim", "Upper Limit", value = 180, width = 150),
+      numericInput("low_lim", "Lower Limit", value = 80, width = 150)
+    )
   ),
 
 # shoutout to the creator of the lcars package
@@ -220,7 +228,7 @@ server <- function(input, output, session) {
 
 # first section is for tidying data and creating reactive variables 
   
-  averages <- eventReactive(input$upload, {
+  all_data <- eventReactive(input$upload, {
     
 # reads the uploaded files to create a list of data frames with the same names
 # as the original files + ".xlsx"   
@@ -255,18 +263,20 @@ server <- function(input, output, session) {
         full_join(files[[input$upload$name[[3]] ]], join_by(date, value)) |>
         full_join(files[[input$upload$name[[4]] ]], join_by(date, value))
     }
-    
-# calculates the daily averages
-    averages <- all_data |>
-      group_by(date) |>
-      summarize(daily_avg = mean(value))
-    
-# adds a new column for the moving average    
-    averages <- averages |>
-      mutate(ma_10 = rollmean(daily_avg, k = 10, fill = NA, align = "right"))
+    all_data <- all_data
   })
+ 
+# calculates the daily averages and adds a new column for the moving average 
+    averages <- eventReactive(input$upload, {
+      averages <- all_data()
+
+      averages <- averages |>
+        group_by(date) |>
+        summarize(daily_avg = mean(value)) |>
+        mutate(ma_10 = rollmean(daily_avg, k = 10, fill = NA, align = "right"))
+    })
+
     
-  
 # calculates overall average
   overall_average <- eventReactive(input$upload, {
     overall_average <- round(mean(as.vector(averages()$daily_avg)))
@@ -464,7 +474,8 @@ server <- function(input, output, session) {
   })
   
   
-# stacked bar chart showing percentage of days in range — adjusts with the slider
+# stacked bar chart showing percentage of days in range 
+# adjusts with the slider
   output$range_percent <- renderPlot({
     bar_averages <- averages()
   
@@ -473,7 +484,7 @@ server <- function(input, output, session) {
       mutate(in_range = replace(in_range, in_range > input$rect, ">" )) |>
       mutate(in_range = replace(in_range, in_range <= input$rect & in_range != ">", "<"))
     
-    range_percent <- ggplot(bar_averages, aes(x = class, y = daily_avg, fill = in_range)) +
+    range_percent <- ggplot(bar_averages, aes(x = class, y = daily_avg, fill = in_range), alpha = 0.98) +
       geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
       scale_fill_manual(
         values = c("#ffcc66", "#99CCFF" ), 
@@ -483,7 +494,7 @@ server <- function(input, output, session) {
           paste("Daily Average <", input$rect, "mg/dL"))
       ) +
       labs(
-        caption = "Percentage of Days 'In-Range'",
+        caption = "Percentage of Days in Ideal Range",
         x = NULL,
         y = NULL
       ) +
@@ -497,7 +508,51 @@ server <- function(input, output, session) {
       )
   range_percent
   })
+  
+# stacked bar chart showing the ratio of overall time spent high, in range, and low
+# adjusts with numeric inputs on the side
+  output$range_time <- renderPlot({
+    req(input$high_lim)
+    req(input$low_lim)
+    bar_time <- all_data()
+    
+    bar_time <- bar_time |>
+      mutate(class = "time", range = value) |>
+      mutate(range = replace(range, range > 250, 3)) |>
+      mutate(range = replace(range, range > input$high_lim & range != 3, 2 )) |>
+      mutate(range = replace(range, range <= input$high_lim & range >= input$low_lim, 1 )) |>
+      mutate(range = replace(range, range < input$low_lim & range != 2 & range != 1 & range != 3, 0)) |>
+      mutate(range = as.character(range))
+    
+    
+    range_time <- ggplot(bar_time, aes(x = class, y = value, fill = range)) +
+      geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
+      scale_fill_manual(
+        values = c("#BC4411","#ffcc66", "#99CCFF", "#CD99CE" ), 
+        breaks = c("3", "2", "1", "0"),
+        labels = c(
+          "Very High (> 250 mg/dL)",
+          paste("High (>", input$high_lim, "mg/dL)"), 
+          "In Range",
+          paste("Low (<", input$low_lim, "mg/dL)"))
+      ) +
+      labs(
+        caption = "Overall Time in Range ",
+        x = NULL,
+        y = NULL
+      ) +
+      theme_lcars_dark() +
+      theme(
+        legend.title = element_blank(),
+        plot.caption = element_text(hjust = 0.5, size = 16, margin = margin(t = 15)),
+        legend.text = element_text(size = 12),
+        axis.text.x = element_blank(),
+        plot.margin = margin(28, 28, 28, 32)
+      )
+    range_time
+  })
 }
 
+# colors to revisit: #3366CD #BC4411
 
 shinyApp(ui, server)
