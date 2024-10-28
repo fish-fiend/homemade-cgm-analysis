@@ -1,5 +1,7 @@
-# DEMO
-![A7373A61-4733-4473-A824-F085C5D8C59F_1_102_o](https://github.com/user-attachments/assets/91d66eef-a387-4b96-baab-0715bd739b50)
+### TEST DATA
+  [clarity_1023_0120.xlsx](https://github.com/user-attachments/files/17535653/clarity_1023_0120.xlsx) ...
+  [clarity_export_90.xlsx](https://github.com/user-attachments/files/17535655/clarity_export_90.xlsx)
+  You need to upload data for the graphics to render so here's some you can use.  
 
 <br></br>
 
@@ -12,7 +14,7 @@ Only new issue is that the graph kinda glitches if you upload two datasets that 
 
 <br></br>
 
-### Upcoming Features: 
+### UPCOMING FEATURES
   - option to change units between mmol/L and mg/dL (currently mg/dL is the only choice)
   - make the font more readable
   - dark mode option for the graph (maybe)
