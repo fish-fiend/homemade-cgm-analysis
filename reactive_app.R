@@ -1,15 +1,16 @@
 library(shiny)
 library(shinyWidgets)
-library(tidyverse) 
+library(tidyverse)
 library(ggplot2)
 library(gt)
-library(lcars)
+library(trekit)
 library(grid)
 library(png)
 library(readxl)
 library(zoo)
 library(stats)
 # a lotttt of packages
+# 'trekit' is my minorly adjusted version of 'lcars'
 
 
 # A1C to eAG conversion chart
@@ -20,7 +21,7 @@ library(stats)
   conversion_chart_gt <- conversion_chart |>
     gt()
 
-  
+
 # function for removing irrelevant data
   reshape <- function(file) {
     file[-(1:19),] |>
@@ -30,30 +31,38 @@ library(stats)
   }
 
 # functions for reincorporating extreme readings (preventing NAs)
-# replacing "High" or "Low" values with 400 and 40 to get a slightly more 
+# replacing "High" or "Low" values with 400 and 40 to get a slightly more
 # accurate estimate
   highs <- function(x) {
     mutate(x, ...8 = replace(...8, ...8 == "High", "400" ))
   }
-  
+
   lows <- function(x) {
     mutate(x, ...8 = replace(...8, ...8 == "Low", "40" ))
   }
-  
+
 # starter dates for the date range display
   first_date <- Sys.Date() - 90
   last_date <- Sys.Date()
 
-  
 
-ui <- lcarsPage(force_uppercase = TRUE, 
-  
+
+ui <- lcarsPage(force_uppercase = TRUE,
+
+  tags$head(
+    tags$style(HTML("
+      body {
+        font-size: 14 px;
+        color: #fcdc7e;
+      }"))
+  ),
+
 # title
 # "B.R.A.T. (Blood-sugar Readings: Average Trends)"
-  lcarsHeader("[INSERT TITLE HERE]", 
-              color = "#FF9900", 
+  lcarsHeader("[INSERT TITLE HERE]",
+              color = "#FF9900",
               title_right = FALSE),
-  
+
 
 # header section — intro and customizable settings for the plot
   lcarsSweep(reverse = TRUE, color = "#99CCFF",
@@ -84,7 +93,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
         "interval", "Date Range",
         start = first_date,
         end = last_date,
-        min = first_date, 
+        min = first_date,
         max = last_date
       ),
       div(br()),
@@ -97,7 +106,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
     ),
     chooseSliderSkin("Modern", color = "#cc99cc")
   ),
-  
+
 
 # bracket for uploading data
   lcarsBracket(
@@ -123,8 +132,8 @@ ui <- lcarsPage(force_uppercase = TRUE,
       )
     )
   ),
-  
-  
+
+
 # toggleable instructions below bracket
   fluidRow(
     column(8,
@@ -138,20 +147,20 @@ ui <- lcarsPage(force_uppercase = TRUE,
         htmlOutput("instructions")
     )
   ),
-  
-  
-  
+
+
+
 # box for displaying the plot, toggles, overall average, and conversion chart
   lcarsBox(
     corners = c(1, 2, 3, 4),
     sides = c(1, 3, 4),
     color = c("#CC6699",  "#FF9900",  "#FFCC66",  "#cc99cc"),
     side_color = c( "#FF9900",  "#000000", "#FFCC66", "#CC6699"),
-  
+
 # displays overall average at the top of the box
     title = textOutput("overall_average"),
     title_color = "atomic-tangerine",
-    
+
 # creates the buttons on the left side which control the lines on the plot
     left_inputs = inputColumn(
       lcarsToggle(
@@ -167,23 +176,23 @@ ui <- lcarsPage(force_uppercase = TRUE,
         false_color = "#EE4444"
       )
     ),
-    
+
 # the actual plot itself
     fluidRow(
       column (12, plotOutput("averages_plot_app"))
     ),
-    
+
 # displays the conversion chart (a1c to eag) on the right side
     right_inputs = inputColumn(
       lcarsRect(
         "eAG = estimated average glucose",
         text_size = 10,
-        round = "left", 
+        round = "left",
         height = 21
       ),
       lcarsRect(
-        tableOutput("a1c_eag"), 
-        round = c("both"), 
+        tableOutput("a1c_eag"),
+        round = c("both"),
         color = "#000000",
         text_color = "#FFFFDD",
         text_size = 14,
@@ -194,15 +203,14 @@ ui <- lcarsPage(force_uppercase = TRUE,
   ),
 
 # box for the bar charts
-  lcarsBox( 
+  lcarsBox(
     corners = c(1, 2, 3, 4),
     color = c("#9999FF", "#9999FF", "#9999FF", "#9999FF"),
     sides = c(1, 2, 3, 4),
-  
+
 # bar charts displaying distribution of time in range vs out
     fluidRow(
-      column(1, lcarsRect(color = "#000000")),
-      column(5, plotOutput("range_percent")),
+      column(6, plotOutput("range_percent")),
       column(5, plotOutput("range_time"))
     ),
 
@@ -226,23 +234,23 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 server <- function(input, output, session) {
 
-# first section is for tidying data and creating reactive variables 
-  
+# first section is for tidying data and creating reactive variables
+
   all_data <- eventReactive(input$upload, {
-    
+
 # reads the uploaded files to create a list of data frames with the same names
-# as the original files + ".xlsx"   
+# as the original files + ".xlsx"
     files <- setNames(
-      lapply(input$upload$datapath, read_excel), 
+      lapply(input$upload$datapath, read_excel),
       sapply(input$upload$name, basename))
-    
+
 # interpolation of values outside of the CGM's range (over 400 and under 40)
     files <- lapply(files, highs)
     files <- lapply(files, lows)
-    
-# tidies up the data    
+
+# tidies up the data
     files <- lapply(files, reshape)
-    
+
 # merges the uploaded files, dependent on the number of inputs
 # there's probably a better way to do this but that's not a high priority rn
     if (length(files) == 1) {
@@ -265,8 +273,8 @@ server <- function(input, output, session) {
     }
     all_data <- all_data
   })
- 
-# calculates the daily averages and adds a new column for the moving average 
+
+# calculates the daily averages and adds a new column for the moving average
     averages <- eventReactive(input$upload, {
       averages <- all_data()
 
@@ -276,32 +284,32 @@ server <- function(input, output, session) {
         mutate(ma_10 = rollmean(daily_avg, k = 10, fill = NA, align = "right"))
     })
 
-    
+
 # calculates overall average
   overall_average <- eventReactive(input$upload, {
     overall_average <- round(mean(as.vector(averages()$daily_avg)))
   })
-    
-# takes earliest date of observations 
+
+# takes earliest date of observations
   first_date <- eventReactive(input$upload, {
     averages()$date[1]
   })
-    
+
 # takes most recent date of observations
   last_date <- eventReactive(input$upload, {
     averages_inverse <- arrange(averages(), desc(date))
     last_date <- averages_inverse$date[1]
   })
-  
+
 
 # second section is for. everything else
-  
-  
+
+
 # updates the start/end dates of the date range input in the top right based
 # on the reactive variables created above
   observe({
     input$upload
-    
+
     updateDateRangeInput(
       session,
       "interval",
@@ -314,22 +322,22 @@ server <- function(input, output, session) {
 
 #yapppinnggggggg to fill space
   output$intro <- renderUI ({
-          div(
-        h4("INTRO"), 
-        p("After data is uploaded, a graph will appear in the box below, as well
+      div(
+        h3("INTRO"),
+        h4("After data is uploaded, a graph will appear in the box below, as well
           as an overall estimated daily average and bar plot which compares the
           percent of days with an average value within your selected ideal range.
           The breadth of this range is adjustable using the slider to the right."),
-        p("The chart on the right side of the box displays a rough estimate of A1C
+        h4("The chart on the right side of the box displays a rough estimate of A1C
           based on average blood sugar. The overall average displayed at the top
-          of the box will not necessarily be compatible with this chart as A1C 
+          of the box will not necessarily be compatible with this chart as A1C
           is determined by only the last 90 days of blood sugar behaviour."),
         br(),
         h6("Disclaimer: None of the graphics will render unless you upload data first. Also
            you have to use it at full width or nothing aligns properly. Enjoy! ")
       )
   })
-  
+
 # instructions for downloading/uploading raw data (beneath the bracket)
   output$instructions <- renderUI ({
     if (input$instructions == TRUE){
@@ -337,54 +345,54 @@ server <- function(input, output, session) {
         br(),
         h4("HOW TO DOWNLOAD YOUR RAW CGM DATA IN THE CORRECT FORMAT:"),
         p("Step 1: Log into Dexcom Clarity (at https://clarity.dexcom.com/). On the
-          far right side of the Overview page, just above the 'Sensor Usage' widget, 
+          far right side of the Overview page, just above the 'Sensor Usage' widget,
           is an icon that looks like a spreadsheet with an arrow pointing right."),
-        p("Step 2: Click that icon, select a date range, then press export. The 
+        p("Step 2: Click that icon, select a date range, then press export. The
           data will automatically download in Numbers. 90 days is the automatic
-           date range limit so if you would like to analyze a longer timespan, 
-           you can download multiple 90 day datasets (up to 4) and upload them all 
+           date range limit so if you would like to analyze a longer timespan,
+           you can download multiple 90 day datasets (up to 4) and upload them all
            simultaneously to this app."),
         p("Step 3: Open it in numbers then go to File > Export To > Excel."),
-        p("Step 4: Name the file whatever you want, then come back here and hit 
-          import! Hold down command while clicking on files to select 
+        p("Step 4: Name the file whatever you want, then come back here and hit
+          import! Hold down command while clicking on files to select
           multiple files at once."),
         br()
       )
     }
   })
-  
-  
+
+
 # text for the overall average title at the top of the box
   output$overall_average <- renderText ({
     req(input$upload)
     paste("OVERALL AVERAGE =", overall_average(), "mg/dL")
   })
-  
+
 # conversion chart
   output$a1c_eag <- renderTable ({
     conversion_chart_gt
   })
- 
-  
-# the plot thickens 
+
+
+# the plot thickens
   output$averages_plot_app <- renderPlot({
      req(input$upload)
-    
-# this first part creates a geom-less plot to function as a base for the conditionals 
+
+# this first part creates a geom-less plot to function as a base for the conditionals
 # so that there's less copy + pasting
     averages_plot_app <- ggplot(averages(), aes(x = date)) +
       annotate(
         "rect",
-        xmin = input$interval[1], xmax = input$interval[2], 
-        ymin = 100, ymax = input$rect, 
-        fill = "#99CCFF", 
+        xmin = input$interval[1], xmax = input$interval[2],
+        ymin = 100, ymax = input$rect,
+        fill = "#99CCFF",
         alpha = 0.25
       ) +
       annotate(
-        "rect", 
-        xmin = input$interval[1], xmax = input$interval[2], 
-        ymin = input$rect, ymax = 320, 
-        fill = "#ffcc66", 
+        "rect",
+        xmin = input$interval[1], xmax = input$interval[2],
+        ymin = input$rect, ymax = 320,
+        fill = "#ffcc66",
         alpha = 0.25
       ) +
       labs(
@@ -396,8 +404,8 @@ server <- function(input, output, session) {
       scale_y_continuous(limits = c(100, 320), breaks = seq(100,320,20)) +
 # maybe: geom_hline(yintercept = overall_average(), color = "blue", linetype = "dotted", linewidth = 1) +
       scale_color_manual(
-        "Method", 
-        values = c("#cc6699", "#cc99cc"), 
+        "Method",
+        values = c("#cc6699", "#cc99cc"),
         labels = c("Moving Average", "Daily Average")
       ) + theme_lcars_light() +
       theme(
@@ -407,18 +415,18 @@ server <- function(input, output, session) {
         legend.text = element_text(size = 12),
         plot.margin = margin(25, 10, 25, 25)
       )
-    
-    
+
+
 # this bit tests which buttons have been toggled to determine which extra
-# conditions to add to the original empty plot 
-# (so far unsuccessful in removing the obvious redundancy 
+# conditions to add to the original empty plot
+# (so far unsuccessful in removing the obvious redundancy
 # without fucking up the whole thing)(i don't know why)
-    
+
 # both lines toggled on
     if (input$mavg == TRUE & input$davg == TRUE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_10, color = "#cc6699"), linewidth = 0.92) + 
+        geom_line(aes(y = ma_10, color = "#cc6699"), linewidth = 0.92) +
         theme_lcars_light() +
         theme(
           plot.title = element_text(size = 22),
@@ -430,9 +438,9 @@ server <- function(input, output, session) {
     }
 # moving average on and daily averages off
     if(input$mavg == TRUE & input$davg == FALSE){
-      averages_plot_app <- averages_plot_app + 
+      averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_10, color = "#cc6699"), linewidth = 0.92) + 
+        geom_line(aes(y = ma_10, color = "#cc6699"), linewidth = 0.92) +
         theme_lcars_light() +
         theme(
           plot.title = element_text(size = 22),
@@ -446,7 +454,7 @@ server <- function(input, output, session) {
     if(input$davg == TRUE & input$mavg == FALSE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_10, color = "#cc6699"), alpha = 0) + 
+        geom_line(aes(y = ma_10, color = "#cc6699"), alpha = 0) +
         theme_lcars_light() +
         theme(
           plot.title = element_text(size = 22),
@@ -458,9 +466,9 @@ server <- function(input, output, session) {
     }
 # both lines off (empty plot)
     else {
-      averages_plot_app <- averages_plot_app + 
+      averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_10, color = "#cc6699"), alpha = 0) + 
+        geom_line(aes(y = ma_10, color = "#cc6699"), alpha = 0) +
         theme_lcars_light() +
         theme(
           plot.title = element_text(size = 22),
@@ -472,25 +480,25 @@ server <- function(input, output, session) {
     }
     averages_plot_app
   })
-  
-  
-# stacked bar chart showing percentage of days in range 
+
+
+# stacked bar chart showing percentage of days in range
 # adjusts with the slider
   output$range_percent <- renderPlot({
     bar_averages <- averages()
-  
+
     bar_averages <- bar_averages |>
       mutate(class = "time", in_range = daily_avg) |>
       mutate(in_range = replace(in_range, in_range > input$rect, ">" )) |>
       mutate(in_range = replace(in_range, in_range <= input$rect & in_range != ">", "<"))
-    
+
     range_percent <- ggplot(bar_averages, aes(x = class, y = daily_avg, fill = in_range), alpha = 0.98) +
       geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
       scale_fill_manual(
-        values = c("#ffcc66", "#99CCFF" ), 
+        values = c("#ffcc66", "#99CCFF" ),
         breaks = c(">", "<"),
         labels = c(
-          paste("Daily Average >", input$rect, "mg/dL"), 
+          paste("Daily Average >", input$rect, "mg/dL"),
           paste("Daily Average <", input$rect, "mg/dL"))
       ) +
       labs(
@@ -508,14 +516,14 @@ server <- function(input, output, session) {
       )
   range_percent
   })
-  
+
 # stacked bar chart showing the ratio of overall time spent high, in range, and low
 # adjusts with numeric inputs on the side
   output$range_time <- renderPlot({
     req(input$high_lim)
     req(input$low_lim)
     bar_time <- all_data()
-    
+
     bar_time <- bar_time |>
       mutate(class = "time", range = value) |>
       mutate(range = replace(range, range > 250, 3)) |>
@@ -523,16 +531,16 @@ server <- function(input, output, session) {
       mutate(range = replace(range, range <= input$high_lim & range >= input$low_lim, 1 )) |>
       mutate(range = replace(range, range < input$low_lim & range != 2 & range != 1 & range != 3, 0)) |>
       mutate(range = as.character(range))
-    
-    
+
+
     range_time <- ggplot(bar_time, aes(x = class, y = value, fill = range)) +
       geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
       scale_fill_manual(
-        values = c("#BC4411","#ffcc66", "#99CCFF", "#CD99CE" ), 
+        values = c("#BC4411","#ffcc66", "#99CCFF", "#CD99CE" ),
         breaks = c("3", "2", "1", "0"),
         labels = c(
           "Very High (> 250 mg/dL)",
-          paste("High (>", input$high_lim, "mg/dL)"), 
+          paste("High (>", input$high_lim, "mg/dL)"),
           "In Range",
           paste("Low (<", input$low_lim, "mg/dL)"))
       ) +
