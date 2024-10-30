@@ -1,7 +1,7 @@
 ### TEST DATA
-  Here's a link to the website >>  gfournier.shinyapps.io/cgm-analysis-longterm/ 
+  Here's a link to the website >>  [gfournier.shinyapps.io/cgm-analysis-longterm/](gfournier.shinyapps.io/cgm-analysis-longterm/) 
   
-  And you need to upload data for the graphics to render so here's some >> 
+  And you need to upload data for the graphics to render so here's some of my own >> 
   [clarity_1023_0120.xlsx](https://github.com/user-attachments/files/17535653/clarity_1023_0120.xlsx) ...
   [clarity_export_90.xlsx](https://github.com/user-attachments/files/17535655/clarity_export_90.xlsx)
   
