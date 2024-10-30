@@ -49,11 +49,11 @@ library(stats)
 
 ui <- lcarsPage(force_uppercase = TRUE,
 
-  tags$head(
+  tagList(
     tags$style(HTML("
-      body {
+      div, h3, h4, h5, h6, p {
         font-size: 14 px;
-        color: #fcdc7e;
+        color: #FFCC66;
       }"))
   ),
 
@@ -69,16 +69,29 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # as of yet useless but aesthetically pleasing center divider
     inputColumn(
-      lcarsRect(color = "#cc99cc", height = 21, round = c("both")),
-      lcarsRect(color = "#EE4444", height = 21, round = c("both")),
+      lcarsRect(color = "#cc99cc", height = 22, round = c("both")),
+      lcarsRect(color = "#EE4444", height = 22, round = c("both")),
       lcarsButton("button", "", color = "golden-tanoi", height = 25),
-      lcarsRect(color = "#3366cc", height = 21, round = c("both"))
+      lcarsRect(color = "#3366cc", height = 22, round = c("both"))
     ),
 
 # needed something to fill the space on the left side
     left_inputs = inputColumn(
       column(12,
-        htmlOutput("intro")
+             div(
+               h3("INTRO"),
+               h4("After data is uploaded, a graph will appear in the box below, as well
+          as an overall estimated daily average and bar plot which compares the
+          percent of days with an average value within your selected ideal range.
+          The breadth of this range is adjustable using the slider to the right."),
+               h4("The chart on the right side of the box displays a rough estimate of A1C
+          based on average blood sugar. The overall average displayed at the top
+          of the box will not necessarily be compatible with this chart as A1C
+          is determined by only the last 90 days of blood sugar behaviour."),
+               br(),
+               h6("Disclaimer: None of the graphics will render unless you upload data first. Also
+           you have to use it at full width or nothing aligns properly. Enjoy! ")
+             )
       )
     ),
 
@@ -90,7 +103,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
       ),
       div(br()),
       dateRangeInput(
-        "interval", "Date Range",
+        "interval", h4("Date Range"),
         start = first_date,
         end = last_date,
         min = first_date,
@@ -98,7 +111,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
       ),
       div(br()),
       sliderInput(
-        "rect", "'Ideal' Daily Average Upper Limit",
+        "rect", h4("'Ideal' Daily Average Upper Limit"),
         min = 110, max = 180,
         value = c(170),
         step = 5
@@ -117,7 +130,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
             height = 52,
             text = "UPLOAD DATA TO DISPLAY GRAPH:",
             text_size = 17,
-            text_color = "#FFFFED"
+            text_color = "#FFFDDD"
         )
       ),
       column(6,
@@ -138,7 +151,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
   fluidRow(
     column(8,
         lcarsCheckbox(
-          "instructions", "Instructions for Downloading and Uploading Data",
+          "instructions", h4("Instructions for Downloading and Uploading Data"),
           width = 400,
           value = FALSE
         )
@@ -165,13 +178,18 @@ ui <- lcarsPage(force_uppercase = TRUE,
     left_inputs = inputColumn(
       lcarsToggle(
         inputId = "mavg",
-        label = "Display Moving Average",
+        label = h4("Show Moving Average"),
         value = TRUE,
         false_color = "#EE4444"
       ),
+      lcarsRect(
+        height = 7,
+        color = "#CC6699",
+        round = c("both")
+      ),
       lcarsToggle(
         inputId = "davg",
-        label = "Display Daily Average",
+        label = h4("Show Daily Average"),
         value = TRUE,
         false_color = "#EE4444"
       )
@@ -210,7 +228,8 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # bar charts displaying distribution of time in range vs out
     fluidRow(
-      column(6, plotOutput("range_percent")),
+      column(1, lcarsRect(color = "#000000")),
+      column(5, plotOutput("range_percent")),
       column(5, plotOutput("range_time"))
     ),
 
@@ -321,22 +340,8 @@ server <- function(input, output, session) {
   })
 
 #yapppinnggggggg to fill space
-  output$intro <- renderUI ({
-      div(
-        h3("INTRO"),
-        h4("After data is uploaded, a graph will appear in the box below, as well
-          as an overall estimated daily average and bar plot which compares the
-          percent of days with an average value within your selected ideal range.
-          The breadth of this range is adjustable using the slider to the right."),
-        h4("The chart on the right side of the box displays a rough estimate of A1C
-          based on average blood sugar. The overall average displayed at the top
-          of the box will not necessarily be compatible with this chart as A1C
-          is determined by only the last 90 days of blood sugar behaviour."),
-        br(),
-        h6("Disclaimer: None of the graphics will render unless you upload data first. Also
-           you have to use it at full width or nothing aligns properly. Enjoy! ")
-      )
-  })
+
+
 
 # instructions for downloading/uploading raw data (beneath the bracket)
   output$instructions <- renderUI ({
