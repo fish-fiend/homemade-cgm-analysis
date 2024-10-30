@@ -8,14 +8,12 @@
 <br></br>
 
 ### MOST PRESSING (and hardest to solve) ISSUE — FIXED ☑️
-I finally made it possible for multiple files to be uploaded and analyzed as one dataset!!! ANNNNNDDDDD figured out
-how to turn the indexing/substitution step into a function in order to replace the out-of-range "High" and "Low" values with "400" and "40" <strong>without</strong> 
-sacrificing the ability to wrangle multiple files at once!
-
+I finally made it possible for up to 4 files (at most an entire year's worth of data!) to be uploaded and analyzed as one dataset!! ANNNNNDDDDD  I figured out how to turn the indexing/substitution step into a function in order to replace the out-of-range "High" and "Low" values with "400" and "40" <strong>without</strong> sacrificing the ability to wrangle multiple files at once!
 
 <br></br>
 
 ### UPCOMING FEATURES
+  - faster upload processing
   - option to change units between mmol/L and mg/dL (currently mg/dL is the only choice)
   - make the font more readable
   - dark mode option for the graph (maybe)
