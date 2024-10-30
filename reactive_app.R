@@ -49,12 +49,13 @@ library(stats)
 
 ui <- lcarsPage(force_uppercase = TRUE,
 
+# css
   tagList(
     tags$style(HTML("
       div, h3, h4, h5, h6, p {
-        font-size: 14 px;
         color: #FFCC66;
       }"))
+
   ),
 
 # title
@@ -151,7 +152,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
   fluidRow(
     column(8,
         lcarsCheckbox(
-          "instructions", h4("Instructions for Downloading and Uploading Data"),
+          "instructions", p("Instructions for Downloading and Uploading Data"),
           width = 400,
           value = FALSE
         )
@@ -178,18 +179,20 @@ ui <- lcarsPage(force_uppercase = TRUE,
     left_inputs = inputColumn(
       lcarsToggle(
         inputId = "mavg",
-        label = h4("Show Moving Average"),
+        label = div("Show Moving Average"),
         value = TRUE,
         false_color = "#EE4444"
       ),
       lcarsRect(
-        height = 7,
+        height = 5,
+        width = 125,
         color = "#CC6699",
+        decorate = c("right"),
         round = c("both")
       ),
       lcarsToggle(
         inputId = "davg",
-        label = h4("Show Daily Average"),
+        label = div("Show Daily Average"),
         value = TRUE,
         false_color = "#EE4444"
       )
@@ -229,14 +232,14 @@ ui <- lcarsPage(force_uppercase = TRUE,
 # bar charts displaying distribution of time in range vs out
     fluidRow(
       column(1, lcarsRect(color = "#000000")),
-      column(5, plotOutput("range_percent")),
-      column(5, plotOutput("range_time"))
+      column(5, plotOutput("range_time")),
+      column(5, plotOutput("range_percent"))
     ),
 
 # upper and lower limit selectors for the charts
     right_inputs = inputColumn(
-      numericInput("high_lim", "Upper Limit", value = 180, width = 150),
-      numericInput("low_lim", "Lower Limit", value = 80, width = 150)
+      numericInput("high_lim", h4("Upper Limit"), value = 180, width = 150),
+      numericInput("low_lim", h4("Lower Limit"), value = 80, width = 150)
     )
   ),
 
@@ -438,7 +441,9 @@ server <- function(input, output, session) {
           axis.title = element_text(size = 15),
           legend.title = element_text(size = 15),
           legend.text = element_text(size = 12),
-          plot.margin = margin(20, 20, 20, 20)
+          plot.margin = margin(20, 20, 20, 20),
+          axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+          axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))
         )
     }
 # moving average on and daily averages off
@@ -452,7 +457,9 @@ server <- function(input, output, session) {
           axis.title = element_text(size = 15),
           legend.title = element_text(size = 15),
           legend.text = element_text(size = 12),
-          plot.margin = margin(20, 20, 20, 20)
+          plot.margin = margin(20, 20, 20, 20),
+          axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+          axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))
         )
     }
 # daily averages on and moving average off
@@ -466,7 +473,9 @@ server <- function(input, output, session) {
           axis.title = element_text(size = 15),
           legend.title = element_text(size = 15),
           legend.text = element_text(size = 12),
-          plot.margin = margin(20, 20, 20, 20)
+          plot.margin = margin(20, 20, 20, 20),
+          axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+          axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))
         )
     }
 # both lines off (empty plot)
@@ -480,46 +489,12 @@ server <- function(input, output, session) {
           axis.title = element_text(size = 15),
           legend.title = element_text(size = 15),
           legend.text = element_text(size = 12),
-          plot.margin = margin(20, 20, 20, 20)
+          plot.margin = margin(20, 20, 20, 20),
+          axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+          axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))
         )
     }
     averages_plot_app
-  })
-
-
-# stacked bar chart showing percentage of days in range
-# adjusts with the slider
-  output$range_percent <- renderPlot({
-    bar_averages <- averages()
-
-    bar_averages <- bar_averages |>
-      mutate(class = "time", in_range = daily_avg) |>
-      mutate(in_range = replace(in_range, in_range > input$rect, ">" )) |>
-      mutate(in_range = replace(in_range, in_range <= input$rect & in_range != ">", "<"))
-
-    range_percent <- ggplot(bar_averages, aes(x = class, y = daily_avg, fill = in_range), alpha = 0.98) +
-      geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
-      scale_fill_manual(
-        values = c("#ffcc66", "#99CCFF" ),
-        breaks = c(">", "<"),
-        labels = c(
-          paste("Daily Average >", input$rect, "mg/dL"),
-          paste("Daily Average <", input$rect, "mg/dL"))
-      ) +
-      labs(
-        caption = "Percentage of Days in Ideal Range",
-        x = NULL,
-        y = NULL
-      ) +
-      theme_lcars_dark() +
-      theme(
-        legend.title = element_blank(),
-        plot.caption = element_text(hjust = 0.5, size = 16, margin = margin(t = 15)),
-        legend.text = element_text(size = 12),
-        axis.text.x = element_blank(),
-        plot.margin = margin(28, 28, 28, 32),
-      )
-  range_percent
   })
 
 # stacked bar chart showing the ratio of overall time spent high, in range, and low
@@ -560,9 +535,44 @@ server <- function(input, output, session) {
         plot.caption = element_text(hjust = 0.5, size = 16, margin = margin(t = 15)),
         legend.text = element_text(size = 12),
         axis.text.x = element_blank(),
-        plot.margin = margin(28, 28, 28, 32)
+        plot.margin = margin(28, 28, 28, 28)
       )
     range_time
+  })
+
+# stacked bar chart showing percentage of days in range
+# adjusts with the slider
+  output$range_percent <- renderPlot({
+    bar_averages <- averages()
+
+    bar_averages <- bar_averages |>
+      mutate(class = "time", in_range = daily_avg) |>
+      mutate(in_range = replace(in_range, in_range > input$rect, ">" )) |>
+      mutate(in_range = replace(in_range, in_range <= input$rect & in_range != ">", "<"))
+
+    range_percent <- ggplot(bar_averages, aes(x = class, y = daily_avg, fill = in_range), alpha = 0.98) +
+      geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
+      scale_fill_manual(
+        values = c("#ffcc66", "#99CCFF" ),
+        breaks = c(">", "<"),
+        labels = c(
+          paste("Daily Avg. >", input$rect, "mg/dL"),
+          paste("Daily Avg. <", input$rect, "mg/dL"))
+      ) +
+      labs(
+        caption = "Percentage of Days in Ideal Range",
+        x = NULL,
+        y = NULL
+      ) +
+      theme_lcars_dark() +
+      theme(
+        legend.title = element_blank(),
+        plot.caption = element_text(hjust = 0.5, size = 16, margin = margin(t = 15)),
+        legend.text = element_text(size = 12),
+        axis.text.x = element_blank(),
+        plot.margin = margin(28, 28, 28, 28),
+      )
+  range_percent
   })
 }
 
