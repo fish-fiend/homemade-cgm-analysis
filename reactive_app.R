@@ -3,14 +3,13 @@ library(shinyWidgets)
 library(tidyverse)
 library(ggplot2)
 library(gt)
-library(trekit)
+library(lcars)
 library(grid)
 library(png)
 library(readxl)
 library(zoo)
 library(stats)
 # a lotttt of packages
-# 'trekit' is my minorly adjusted version of 'lcars'
 
 
 # A1C to eAG conversion chart
@@ -52,10 +51,15 @@ ui <- lcarsPage(force_uppercase = TRUE,
 # css
   tagList(
     tags$style(HTML("
-      div, h3, h4, h5, h6, p {
-        color: #FFCC66;
-      }"))
+      @import url(https://fonts.googleapis.com/css2?family=Antonio:wght@300&display=swap);
 
+      h3, h4, h5, p {
+        color: #FFCC66;
+        font-family: Antonio;
+      }
+      div {
+        font-family: Antonio;
+      }"))
   ),
 
 # title
@@ -70,10 +74,10 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # as of yet useless but aesthetically pleasing center divider
     inputColumn(
-      lcarsRect(color = "#cc99cc", height = 22, round = c("both")),
-      lcarsRect(color = "#EE4444", height = 22, round = c("both")),
+      lcarsRect(color = "#cc99cc", height = 24, round = c("both")),
+      lcarsRect(color = "#EE4444", height = 24, round = c("both")),
       lcarsButton("button", "", color = "golden-tanoi", height = 25),
-      lcarsRect(color = "#3366cc", height = 22, round = c("both"))
+      lcarsRect(color = "#3366cc", height = 24, round = c("both"))
     ),
 
 # needed something to fill the space on the left side
@@ -90,7 +94,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
           of the box will not necessarily be compatible with this chart as A1C
           is determined by only the last 90 days of blood sugar behaviour."),
                br(),
-               h6("Disclaimer: None of the graphics will render unless you upload data first. Also
+               h5("Disclaimer: None of the graphics will render unless you upload data first. Also
            you have to use it at full width or nothing aligns properly. Enjoy! ")
              )
       )
@@ -129,7 +133,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
         lcarsRect(
             color = "#000000",
             height = 52,
-            text = "UPLOAD DATA TO DISPLAY GRAPH:",
+            text = h4("UPLOAD DATA TO DISPLAY GRAPH:"),
             text_size = 17,
             text_color = "#FFFDDD"
         )
@@ -238,8 +242,8 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # upper and lower limit selectors for the charts
     right_inputs = inputColumn(
-      numericInput("high_lim", h4("Upper Limit"), value = 180, width = 150),
-      numericInput("low_lim", h4("Lower Limit"), value = 80, width = 150)
+      numericInput("high_lim", "Upper Limit", value = 180, width = 150),
+      numericInput("low_lim", "Lower Limit", value = 80, width = 150)
     )
   ),
 
@@ -560,7 +564,7 @@ server <- function(input, output, session) {
           paste("Daily Avg. <", input$rect, "mg/dL"))
       ) +
       labs(
-        caption = "Percentage of Days in Ideal Range",
+        caption = "Percent of Days in Ideal Range",
         x = NULL,
         y = NULL
       ) +
