@@ -57,9 +57,15 @@ ui <- lcarsPage(force_uppercase = TRUE,
         color: #FFCC66;
         font-family: Antonio;
       }
+      h6 {
+        color: #FFCC66;
+        font-family: Antonio;
+        font-size: 15px;
+      }
       div {
         font-family: Antonio;
-      }"))
+      }
+    "))
   ),
 
 # title
@@ -71,23 +77,24 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # header section — intro and customizable settings for the plot
   lcarsSweep(reverse = TRUE, color = "#99CCFF",
+      title = "Info",
 
 # as of yet useless but aesthetically pleasing center divider
     inputColumn(
-      lcarsRect(color = "#cc99cc", height = 24, round = c("both")),
-      lcarsRect(color = "#EE4444", height = 24, round = c("both")),
+      lcarsRect(color = "#cc99cc", height = 21, round = c("both")),
+      lcarsRect(color = "#EE4444", height = 21, round = c("both")),
       lcarsButton("button", "", color = "golden-tanoi", height = 25),
-      lcarsRect(color = "#3366cc", height = 24, round = c("both"))
+      lcarsRect(color = "#3366cc", height = 21, round = c("both"))
     ),
 
 # needed something to fill the space on the left side
     left_inputs = inputColumn(
       column(12,
              div(
-               h3("INTRO"),
+               br(),
                h4("After data is uploaded, a graph will appear in the box below, as well
-          as an overall estimated daily average and bar plot which compares the
-          percent of days with an average value within your selected ideal range.
+          as an overall estimated daily average and bar plot which shows the
+          percentage of days with an average value within your selected ideal range.
           The breadth of this range is adjustable using the slider to the right."),
                h4("The chart on the right side of the box displays a rough estimate of A1C
           based on average blood sugar. The overall average displayed at the top
@@ -95,7 +102,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
           is determined by only the last 90 days of blood sugar behaviour."),
                br(),
                h5("Disclaimer: None of the graphics will render unless you upload data first. Also
-           you have to use it at full width or nothing aligns properly. Enjoy! ")
+           you have to use this page at full width or nothing aligns properly. Enjoy! ")
              )
       )
     ),
@@ -121,19 +128,19 @@ ui <- lcarsPage(force_uppercase = TRUE,
         value = c(170),
         step = 5
       )
-    ),
-    chooseSliderSkin("Modern", color = "#cc99cc")
+    )
   ),
 
 
 # bracket for uploading data
   lcarsBracket(
+    color = "#AA88DD",
     fluidRow(
       column(5,
         lcarsRect(
             color = "#000000",
             height = 52,
-            text = h4("UPLOAD DATA TO DISPLAY GRAPH:"),
+            text = h3("UPLOAD DATA TO DISPLAY GRAPH:"),
             text_size = 17,
             text_color = "#FFFDDD"
         )
@@ -183,20 +190,19 @@ ui <- lcarsPage(force_uppercase = TRUE,
     left_inputs = inputColumn(
       lcarsToggle(
         inputId = "mavg",
-        label = div("Show Moving Average"),
+        label = h6("Show Moving Average:"),
         value = TRUE,
         false_color = "#EE4444"
       ),
       lcarsRect(
-        height = 5,
-        width = 125,
+        height = 10,
+        width = 150,
         color = "#CC6699",
-        decorate = c("right"),
         round = c("both")
       ),
       lcarsToggle(
         inputId = "davg",
-        label = div("Show Daily Average"),
+        label = h6("Show Daily Average:"),
         value = TRUE,
         false_color = "#EE4444"
       )
@@ -219,7 +225,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
         tableOutput("a1c_eag"),
         round = c("both"),
         color = "#000000",
-        text_color = "#FFFFDD",
+        text_color = "#FFCC66",
         text_size = 14,
         height = 380,
         width = 140
@@ -242,8 +248,14 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # upper and lower limit selectors for the charts
     right_inputs = inputColumn(
-      numericInput("high_lim", "Upper Limit", value = 180, width = 150),
-      numericInput("low_lim", "Lower Limit", value = 80, width = 150)
+      numericInput("high_lim", h6("Upper Limit"), value = 180, width = 150),
+      lcarsRect(
+        height = 14,
+        width = 150,
+        color = "#9999FF",
+        round = c("both")
+      ),
+      numericInput("low_lim", h6("Lower Limit"), value = 80, width = 150)
     )
   ),
 
@@ -307,7 +319,7 @@ server <- function(input, output, session) {
       averages <- averages |>
         group_by(date) |>
         summarize(daily_avg = mean(value)) |>
-        mutate(ma_10 = rollmean(daily_avg, k = 10, fill = NA, align = "right"))
+        mutate(ma_12 = rollmean(daily_avg, k = 12, fill = NA, align = "right"))
     })
 
 
@@ -345,9 +357,6 @@ server <- function(input, output, session) {
       max = last_date()
     )
   })
-
-#yapppinnggggggg to fill space
-
 
 
 # instructions for downloading/uploading raw data (beneath the bracket)
@@ -438,7 +447,7 @@ server <- function(input, output, session) {
     if (input$mavg == TRUE & input$davg == TRUE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_10, color = "#cc6699"), linewidth = 0.92) +
+        geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92) +
         theme_lcars_light() +
         theme(
           plot.title = element_text(size = 22),
@@ -454,7 +463,7 @@ server <- function(input, output, session) {
     if(input$mavg == TRUE & input$davg == FALSE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_10, color = "#cc6699"), linewidth = 0.92) +
+        geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92) +
         theme_lcars_light() +
         theme(
           plot.title = element_text(size = 22),
@@ -470,7 +479,7 @@ server <- function(input, output, session) {
     if(input$davg == TRUE & input$mavg == FALSE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_10, color = "#cc6699"), alpha = 0) +
+        geom_line(aes(y = ma_12, color = "#cc6699"), alpha = 0) +
         theme_lcars_light() +
         theme(
           plot.title = element_text(size = 22),
@@ -486,7 +495,7 @@ server <- function(input, output, session) {
     else {
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_10, color = "#cc6699"), alpha = 0) +
+        geom_line(aes(y = ma_12, color = "#cc6699"), alpha = 0) +
         theme_lcars_light() +
         theme(
           plot.title = element_text(size = 22),
