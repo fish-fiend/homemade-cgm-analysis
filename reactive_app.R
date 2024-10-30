@@ -154,14 +154,14 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # toggleable instructions below bracket
   fluidRow(
-    column(8,
+    column(3,
         lcarsCheckbox(
           "instructions", p("Instructions for Downloading and Uploading Data"),
           width = 400,
           value = FALSE
         )
     ),
-    column(12,
+    column(8,
         htmlOutput("instructions")
     )
   ),
