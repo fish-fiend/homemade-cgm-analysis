@@ -14,8 +14,8 @@ library(stats)
 
 # A1C to eAG conversion chart
   conversion_chart <- data.frame(
-    eAG = c(126, 133, 140, 147, 154, 161, 169, 176, 183, 190, 197),
-    A1C = c(6, 6.25, 6.5, 6.75, 7, 7.25, 7.5, 7.75, 8, 8.25, 8.5)
+    eAG = c(118, 126, 133, 140, 147, 154, 161, 169, 176, 183, 190),
+    A1C = c(5.75, 6, 6.25, 6.5, 6.75, 7, 7.25, 7.5, 7.75, 8, 8.25)
   )
   conversion_chart_gt <- conversion_chart |>
     gt()
@@ -84,10 +84,10 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # as of yet useless but aesthetically pleasing center divider
     inputColumn(
-      lcarsRect(color = "#9999FF", height = 23, round = c("both")),
-      lcarsRect(color = "#cc99cc", height = 23, round = c("both")),
+      lcarsRect(color = "#9999FF", height = 24, round = c("both")),
+      lcarsRect(color = "#cc99cc", height = 24, round = c("both")),
       lcarsButton("button", "", color = "golden-tanoi"),
-      lcarsRect(color = "#EE5555", height = 23, round = c("both"))
+      lcarsRect(color = "#EE5555", height = 24, round = c("both"))
     ),
 
 # needed something to fill the space on the left side
@@ -102,11 +102,12 @@ ui <- lcarsPage(force_uppercase = TRUE,
           h4("The chart on the right side of the box displays a rough estimate of A1C
           based on average blood sugar. The overall average displayed at the top
           of the box will not necessarily be compatible with this chart as A1C
-          is determined by only the last 90 days of blood sugar behaviour."),
+          is determined by only the last 90 days of blood sugar behaviour. It's
+          best used as a general indication of blood sugar control, not a predictor
+          of a lab value."),
           br(),
           h5("Disclaimer: None of the graphics will render unless you upload data first. Also
            you have to use this page at full width or nothing aligns properly. Enjoy! "),
-          br()
         )
       )
     ),
@@ -262,14 +263,14 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # upper and lower limit selectors for the charts
     right_inputs = inputColumn(
-      numericInput("high_lim", h6("Upper Limit"), value = 180, width = 150),
+      numericInput("high_lim", h4("'High' Limit"), value = 180, width = 150),
       lcarsRect(
         height = 14,
         width = 150,
         color = "#AA99FF",
         round = c("both")
       ),
-      numericInput("low_lim", h6("Lower Limit"), value = 80, width = 150),
+      numericInput("low_lim", h4("'Low' Limit"), value = 80, width = 150),
       lcarsRect(height = 67, color = "#7788FF"),
     )
   ),
