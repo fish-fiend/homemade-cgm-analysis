@@ -117,7 +117,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
       lcarsPill(
         title = "GRAPH SETTINGS",
         height = 30,
-        color = "#CCBB55"
+        color = "#CCCC55"
       ),
       div(br()),
       dateRangeInput(
@@ -220,7 +220,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # the actual plot itself
     fluidRow(
-      column (12, plotOutput("averages_plot_app"))
+      column (12, plotOutput("averages_plot_app", height = 500))
     ),
 
 # displays the conversion chart (a1c to eag) on the right side
@@ -252,8 +252,8 @@ ui <- lcarsPage(force_uppercase = TRUE,
 # bar charts displaying distribution of time in range vs out
     fluidRow(
       column(1, lcarsRect(color = "#000000")),
-      column(5, plotOutput("range_time")),
-      column(5, plotOutput("range_percent"))
+      column(5, plotOutput("range_time", height = 450)),
+      column(5, plotOutput("range_percent", height = 450))
     ),
 
 # all style no substance
@@ -564,7 +564,7 @@ server <- function(input, output, session) {
         plot.caption = element_text(hjust = 0.5, size = 16, margin = margin(t = 15)),
         legend.text = element_text(size = 12),
         axis.text.x = element_blank(),
-        plot.margin = margin(28, 28, 28, 28)
+        plot.margin = margin(32, 28, 28, 28)
       )
     range_time
   })
