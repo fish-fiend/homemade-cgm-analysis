@@ -53,7 +53,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
     tags$style(HTML("
       @import url(https://fonts.googleapis.com/css2?family=Antonio:wght@300&display=swap);
 
-      h3, h4, h5, p {
+      h4, h5, p {
         color: #FFCC66;
         font-family: Antonio;
       }
@@ -61,6 +61,10 @@ ui <- lcarsPage(force_uppercase = TRUE,
         color: #FFCC66;
         font-family: Antonio;
         font-size: 15px;
+      }
+      h3 {
+        color: #FF7700;
+        font-family: Antonio;
       }
       div {
         font-family: Antonio;
@@ -74,36 +78,36 @@ ui <- lcarsPage(force_uppercase = TRUE,
               color = "#FF9900",
               title_right = FALSE),
 
-
 # header section — intro and customizable settings for the plot
   lcarsSweep(reverse = TRUE, color = "#99CCFF",
-      title = "Info",
+    title = "Info", expand = c(0, 500),
 
 # as of yet useless but aesthetically pleasing center divider
     inputColumn(
-      lcarsRect(color = "#cc99cc", height = 21, round = c("both")),
-      lcarsRect(color = "#EE4444", height = 21, round = c("both")),
-      lcarsButton("button", "", color = "golden-tanoi", height = 25),
-      lcarsRect(color = "#3366cc", height = 21, round = c("both"))
+      lcarsRect(color = "#9999FF", height = 23, round = c("both")),
+      lcarsRect(color = "#cc99cc", height = 23, round = c("both")),
+      lcarsButton("button", "", color = "golden-tanoi"),
+      lcarsRect(color = "#EE5555", height = 23, round = c("both"))
     ),
 
 # needed something to fill the space on the left side
     left_inputs = inputColumn(
       column(12,
-             div(
-               br(),
-               h4("After data is uploaded, a graph will appear in the box below, as well
+        div(
+          br(),
+          h4("After data is uploaded, a graph will appear in the box below, as well
           as an overall estimated daily average and bar plot which shows the
           percentage of days with an average value within your selected ideal range.
           The breadth of this range is adjustable using the slider to the right."),
-               h4("The chart on the right side of the box displays a rough estimate of A1C
+          h4("The chart on the right side of the box displays a rough estimate of A1C
           based on average blood sugar. The overall average displayed at the top
           of the box will not necessarily be compatible with this chart as A1C
           is determined by only the last 90 days of blood sugar behaviour."),
-               br(),
-               h5("Disclaimer: None of the graphics will render unless you upload data first. Also
-           you have to use this page at full width or nothing aligns properly. Enjoy! ")
-             )
+          br(),
+          h5("Disclaimer: None of the graphics will render unless you upload data first. Also
+           you have to use this page at full width or nothing aligns properly. Enjoy! "),
+          br()
+        )
       )
     ),
 
@@ -111,7 +115,8 @@ ui <- lcarsPage(force_uppercase = TRUE,
     right_inputs = inputColumn(
       lcarsPill(
         title = "GRAPH SETTINGS",
-        height = 30
+        height = 30,
+        color = "#CCBB55"
       ),
       div(br()),
       dateRangeInput(
@@ -134,7 +139,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # bracket for uploading data
   lcarsBracket(
-    color = "#AA88DD",
+    color = "#FF7700",
     fluidRow(
       column(5,
         lcarsRect(
@@ -142,7 +147,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
             height = 52,
             text = h3("UPLOAD DATA TO DISPLAY GRAPH:"),
             text_size = 17,
-            text_color = "#FFFDDD"
+            text_color = "#FFFFDD"
         )
       ),
       column(6,
@@ -205,7 +210,11 @@ ui <- lcarsPage(force_uppercase = TRUE,
         label = h6("Show Daily Average:"),
         value = TRUE,
         false_color = "#EE4444"
-      )
+      ),
+      lcarsRect(
+        height = 170,
+        color = "#CC6699"
+      ),
     ),
 
 # the actual plot itself
@@ -236,7 +245,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
 # box for the bar charts
   lcarsBox(
     corners = c(1, 2, 3, 4),
-    color = c("#9999FF", "#9999FF", "#9999FF", "#9999FF"),
+    color = c("#AA99FF", "#AA99FF", "#AA99FF", "#AA99FF"),
     sides = c(1, 2, 3, 4),
 
 # bar charts displaying distribution of time in range vs out
@@ -246,16 +255,22 @@ ui <- lcarsPage(force_uppercase = TRUE,
       column(5, plotOutput("range_percent"))
     ),
 
+# all style no substance
+    left_inputs = inputColumn(
+      lcarsRect(height = 225, color = "#7788FF"),
+    ),
+
 # upper and lower limit selectors for the charts
     right_inputs = inputColumn(
       numericInput("high_lim", h6("Upper Limit"), value = 180, width = 150),
       lcarsRect(
         height = 14,
         width = 150,
-        color = "#9999FF",
+        color = "#AA99FF",
         round = c("both")
       ),
-      numericInput("low_lim", h6("Lower Limit"), value = 80, width = 150)
+      numericInput("low_lim", h6("Lower Limit"), value = 80, width = 150),
+      lcarsRect(height = 67, color = "#7788FF"),
     )
   ),
 
