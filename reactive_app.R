@@ -247,7 +247,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
     )
   ),
 
-# box for th violin plot
+# box for the violin plot
   lcarsBox(
     corners = c(1, 2, 3, 4),
     color = c("#CCCC55", "#CCCC55", "#CCCC55", "#CCCC55"),
@@ -255,6 +255,17 @@ ui <- lcarsPage(force_uppercase = TRUE,
     side_color = c("#000000", "#000000", "#000000", "#000000"),
     fluidRow(
       column(12, plotOutput("glycemic_var", height = 500))
+    ),
+    fluidRow(
+      inputColumn(
+        column(6,
+               dateRangeInput(
+                 "range", h4("Date Range"),
+                 start = Sys.Date() - 7,
+                 end = Sys.Date(),
+               )
+        )
+      )
     )
   ),
 
@@ -542,19 +553,51 @@ server <- function(input, output, session) {
     averages_plot_app
   })
 
+  maxi <- reactiveVal()
+  mini <- reactiveVal()
 
-  output$glycemic_var <- renderPlot({
+  observe({
+    input$upload
 
+    if(!is.null(input$range)) {
+      mini(input$range[2])
+      maxi(input$range[1])
+    }
+    else {
+      mini(all_data()$date[1])
+      maxi(all_data()$date[2016])
+    }
+  })
+
+  # updates date range input for the violin plot based on user selection
+  observe({
+    input$upload
+
+    updateDateRangeInput(
+      session,
+      "range",
+      start = all_data()$date[2016],
+      end = all_data()$date[1],
+    )
+  })
+
+  violin_data <- eventReactive(input$upload, {
     violin_data <- all_data()
 
     violin_data <- violin_data |>
+      filter(date > mini() & date < maxi()) |>
       group_by(date) |>
-      arrange(desc(date)) |>
       mutate(value = as.numeric(value), date = as.factor(date))
+  })
 
-    violin_data <- violin_data[(1:2016),]
 
-    glycemic_var <- ggplot(violin_data, aes(x = date, y = value, fill = date)) +
+
+
+# violin plot for daily glycemic variation
+  output$glycemic_var <- renderPlot({
+    req(input$upload)
+
+    glycemic_var <- ggplot(violin_data(), aes(x = date, y = value, fill = date)) +
       geom_violin() +
       labs(
         title = "Daily Glycemic Variation",
@@ -564,12 +607,9 @@ server <- function(input, output, session) {
       scale_y_continuous(limits = c(55, 375), breaks = seq(40, 400, 25)) +
       theme_lcars_dark() +
       theme(
-        plot.title = element_text(size = 22, margin = margin(t = 0, r = 0, b = 15, l = 0)),
-        axis.title = element_text(size = 15),
-        axis.text = element_text(size = 12),
+        plot.title = element_text(size = 17),
+        axis.title = element_text(size = 12),
         plot.margin = margin(15, 30, 15, 15),
-        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
-        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
         legend.position = "none"
       )
     glycemic_var
