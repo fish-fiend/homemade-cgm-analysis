@@ -257,15 +257,14 @@ ui <- lcarsPage(force_uppercase = TRUE,
       column(12, plotOutput("glycemic_var", height = 500))
     ),
     fluidRow(
-      inputColumn(
-        column(6,
-               dateRangeInput(
-                 "range", h4("Date Range"),
-                 start = Sys.Date() - 7,
-                 end = Sys.Date(),
-               )
+      column(6,
+        dateRangeInput(
+          "range", h4("Date Range"),
+           start = Sys.Date() - 7,
+           end = Sys.Date(),
         )
-      )
+      ),
+      column(6, tableOutput(outputId = "violin_data_table"))
     )
   ),
 
@@ -354,6 +353,7 @@ server <- function(input, output, session) {
     }
     all_data <- all_data
   })
+
 
 # calculates the daily averages and adds a new column for the moving average
     averages <- eventReactive(input$upload, {
@@ -553,21 +553,14 @@ server <- function(input, output, session) {
     averages_plot_app
   })
 
-  maxi <- reactiveVal()
-  mini <- reactiveVal()
-
-  observe({
-    input$upload
-
-    if(!is.null(input$range)) {
-      mini(input$range[2])
-      maxi(input$range[1])
-    }
-    else {
-      mini(all_data()$date[1])
-      maxi(all_data()$date[2016])
-    }
+  maxi <- eventReactive(input$upload, {
+    last_date()
   })
+  mini <- eventReactive(input$upload, {
+    last_date() - 7
+  })
+
+
 
   # updates date range input for the violin plot based on user selection
   observe({
@@ -576,8 +569,8 @@ server <- function(input, output, session) {
     updateDateRangeInput(
       session,
       "range",
-      start = all_data()$date[2016],
-      end = all_data()$date[1],
+      start = mini(),
+      end = maxi(),
     )
   })
 
@@ -585,12 +578,10 @@ server <- function(input, output, session) {
     violin_data <- all_data()
 
     violin_data <- violin_data |>
-      filter(date > mini() & date < maxi()) |>
+      filter(date >= mini() & date <= maxi()) |>
       group_by(date) |>
       mutate(value = as.numeric(value), date = as.factor(date))
   })
-
-
 
 
 # violin plot for daily glycemic variation
