@@ -253,18 +253,17 @@ ui <- lcarsPage(force_uppercase = TRUE,
     color = c("#CCCC55", "#CCCC55", "#CCCC55", "#CCCC55"),
     sides = c(2, 4),
     side_color = c("#000000", "#000000", "#000000", "#000000"),
-    fluidRow(
-      column(12, plotOutput("glycemic_var", height = 500))
+
+    right_inputs = inputColumn(
+      dateRangeInput(
+        "range", h4("Date Range"),
+        start = Sys.Date() - 7,
+        end = Sys.Date(),
+        width = 150
+      )
     ),
     fluidRow(
-      column(6,
-        dateRangeInput(
-          "range", h4("Date Range"),
-           start = Sys.Date() - 7,
-           end = Sys.Date(),
-        )
-      ),
-      column(6, tableOutput(outputId = "violin_data_table"))
+      column(12, plotOutput("glycemic_var", height = 560))
     )
   ),
 
@@ -553,20 +552,29 @@ server <- function(input, output, session) {
     averages_plot_app
   })
 
+
+# glycemic variation violin plot time
+
+# creates reactive values that will be used to determine the range of the x-axis
   maxi <- reactiveVal()
   mini <- reactiveVal()
 
+# ascribes initial values to select the most recent week of available data
+# executes upon upload of files
     observeEvent(input$upload, {
       maxi(last_date())
       mini(last_date() - 7)
     })
 
+# ascribes minimum and maximum range based on user selection
+# executes upon date range input
     observeEvent(input$range, {
       maxi(input$range[2])
       mini(input$range[1])
     })
 
-  # updates date range input for the violin plot based on user selection
+# changes the date range starter values to display those reactive values until
+# new ones are input
   observe({
     input$upload
 
@@ -578,21 +586,14 @@ server <- function(input, output, session) {
     )
   })
 
-  observe({
-    input$range
-
-    updateDateRangeInput(
-      session,
-      "range",
-      start = mini(),
-      end = maxi(),
-    )
-  })
-
+# creates a list of multiple conditions so that the data handling will re-execute
+# when either new files are uploaded or the date range is manually adjusted
   range_n_upload <- reactive({
     list(input$range, input$upload)
   })
 
+# aforementioned data handling
+# selects observations between the range inputs
   violin_data <- eventReactive(range_n_upload(), {
     violin_data <- all_data()
 
@@ -603,7 +604,7 @@ server <- function(input, output, session) {
   })
 
 
-# violin plot for daily glycemic variation
+# violin plot
   output$glycemic_var <- renderPlot({
     req(input$upload)
 
@@ -614,11 +615,14 @@ server <- function(input, output, session) {
         y = "Glucose Value (mg/dL)",
         x = "Date"
       ) +
-      scale_y_continuous(limits = c(55, 375), breaks = seq(40, 400, 25)) +
+      scale_y_continuous(limits = c(55, 375), breaks = seq(40, 400, 30)) +
       theme_lcars_dark() +
       theme(
-        plot.title = element_text(size = 17),
-        axis.title = element_text(size = 12),
+        plot.title = element_text(size = 23, margin = margin(b = 30)),
+        axis.title = element_text(size = 15),
+        axis.title.x = element_text(margin = margin(t = 15)),
+        axis.title.y = element_text(margin = margin(r = 15)),
+        axis.text = element_text(size = 12),
         plot.margin = margin(15, 30, 15, 15),
         legend.position = "none"
       )
