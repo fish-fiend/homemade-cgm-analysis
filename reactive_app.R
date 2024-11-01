@@ -640,7 +640,7 @@ server <- function(input, output, session) {
           paste("Daily Avg. <", input$rect, "mg/dL"))
       ) +
       labs(
-        caption = "Percent of Days in Ideal Range",
+        caption = "Days in Range",
         x = NULL,
         y = NULL
       ) +
