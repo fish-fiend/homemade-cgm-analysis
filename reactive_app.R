@@ -220,7 +220,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # the actual plot itself
     fluidRow(
-      column (12, plotOutput("averages_plot_app", height = 500))
+      column (12, plotOutput("averages_plot_app", height = 450))
     ),
 
 # displays the conversion chart (a1c to eag) on the right side
@@ -240,6 +240,17 @@ ui <- lcarsPage(force_uppercase = TRUE,
         height = 380,
         width = 140
       )
+    )
+  ),
+
+# box for th violin plot
+  lcarsBox(
+    corners = c(1, 2, 3, 4),
+    color = c("#CCCC55", "#CCCC55", "#CCCC55", "#CCCC55"),
+    sides = c(2, 4),
+    side_color = c("#000000", "#000000", "#000000", "#000000"),
+    fluidRow(
+      column(12, plotOutput("glycemic_var", height = 500))
     )
   ),
 
@@ -274,6 +285,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
       lcarsRect(height = 67, color = "#7788FF"),
     )
   ),
+
 
 # shoutout to the creator of the lcars package
   div(br(), h6("The aesthetics of this app are based on the LCARS computer interface
@@ -525,6 +537,41 @@ server <- function(input, output, session) {
     }
     averages_plot_app
   })
+
+
+  output$glycemic_var <- renderPlot({
+
+    violin_data <- all_data()
+
+    violin_data <- violin_data |>
+      group_by(date) |>
+      arrange(desc(date)) |>
+      mutate(value = as.numeric(value), date = as.factor(date))
+
+    violin_data <- violin_data[(1:2016),]
+
+    glycemic_var <- ggplot(violin_data, aes(x = date, y = value, fill = date)) +
+      geom_violin() +
+      labs(
+        title = "Daily Glycemic Variation",
+        y = "Glucose Value (mg/dL)",
+        x = "Date"
+      ) +
+      scale_y_continuous(limits = c(55, 375), breaks = seq(40, 400, 25)) +
+      theme_lcars_dark() +
+      theme(
+        plot.title = element_text(size = 22, margin = margin(t = 0, r = 0, b = 15, l = 0)),
+        axis.title = element_text(size = 15),
+        axis.text = element_text(size = 12),
+        plot.margin = margin(15, 30, 15, 15),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        legend.position = "none"
+      )
+    glycemic_var
+  })
+
+
 
 # stacked bar chart showing the ratio of overall time spent high, in range, and low
 # adjusts with numeric inputs on the side
