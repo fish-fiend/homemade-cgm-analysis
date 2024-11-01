@@ -239,6 +239,10 @@ ui <- lcarsPage(force_uppercase = TRUE,
         text_size = 14,
         height = 380,
         width = 140
+      ),
+      lcarsRect(
+        height = 50,
+        color = "golden-tanoi"
       )
     )
   ),
