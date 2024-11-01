@@ -6,7 +6,7 @@
   [clarity_export_90.xlsx](https://github.com/user-attachments/files/17535655/clarity_export_90.xlsx)
   
 
-### [DEMO VIDEO ON YOUTUBE](https://youtu.be/vgO8JMuLfws)
+### [LINK TO DEMO VIDEO ON YOUTUBE](https://youtu.be/vgO8JMuLfws)
 
 
 
