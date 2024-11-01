@@ -553,14 +553,18 @@ server <- function(input, output, session) {
     averages_plot_app
   })
 
-  maxi <- eventReactive(input$upload, {
-    last_date()
-  })
-  mini <- eventReactive(input$upload, {
-    last_date() - 7
-  })
+  maxi <- reactiveVal()
+  mini <- reactiveVal()
 
+    observeEvent(input$upload, {
+      maxi(last_date())
+      mini(last_date() - 7)
+    })
 
+    observeEvent(input$range, {
+      maxi(input$range[2])
+      mini(input$range[1])
+    })
 
   # updates date range input for the violin plot based on user selection
   observe({
@@ -574,7 +578,22 @@ server <- function(input, output, session) {
     )
   })
 
-  violin_data <- eventReactive(input$upload, {
+  observe({
+    input$range
+
+    updateDateRangeInput(
+      session,
+      "range",
+      start = mini(),
+      end = maxi(),
+    )
+  })
+
+  range_n_upload <- reactive({
+    list(input$range, input$upload)
+  })
+
+  violin_data <- eventReactive(range_n_upload(), {
     violin_data <- all_data()
 
     violin_data <- violin_data |>
