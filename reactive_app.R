@@ -24,7 +24,6 @@ theme_averages_plot <- function() {
   )
 }
 
-
 # A1C to eAG conversion chart
   conversion_chart <- data.frame(
     eAG = c(118, 126, 133, 140, 147, 154, 161, 169, 176, 183, 190),
@@ -277,7 +276,12 @@ ui <- lcarsPage(force_uppercase = TRUE,
       )
     ),
     fluidRow(
-      column(12, plotOutput("glycemic_var", height = 560))
+      column(12,
+        plotOutput("glycemic_var", height = 560, click = "violin_click")
+      )
+    ),
+    fluidRow(
+      lcarsRect(uiOutput("violin_info"), height = 50)
     )
   ),
 
@@ -597,7 +601,41 @@ server <- function(input, output, session) {
     glycemic_var
   })
 
+  violin_sd <- reactiveVal(NULL)
+  violin_mean <- reactiveVal(NULL)
 
+
+  observeEvent(input$violin_click, {
+
+    violin_data <- violin_data()
+    averages <- averages()
+
+    selection <- nearPoints(
+                    violin_data,
+                    input$violin_click,
+                    xvar = "date",
+                    maxpoints = 5,
+                    threshold = 45
+                    )
+
+    violin_info_df <- violin_data |>
+      filter(date == as.factor(selection$date[1]))
+
+
+    mean <- averages |>
+      filter(date == as.Date(selection$date[1], '%Y-%m-%d'))
+
+    if(nrow(selection) == 0) {
+      violin_sd(NULL)
+      violin_mean(NULL)
+    }
+    else {
+      violin_sd(paste("Standard Deviation =", round(sd(violin_info_df$value), digits = 1)))
+      violin_mean(paste("Mean =", round(mean$daily_avg[1])))
+    }
+  })
+
+  output$violin_info <- renderUI(div(violin_sd(), br(), violin_mean()))
 
 # stacked bar chart showing the ratio of overall time spent high, in range, and low
 # adjusts with numeric inputs on the side
