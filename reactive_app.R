@@ -145,7 +145,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
       sliderInput(
         "rect", h4("'Ideal' Daily Average Upper Limit"),
         min = 110, max = 180,
-        value = c(170),
+        value = c(165),
         step = 5
       )
     )
@@ -327,25 +327,24 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 server <- function(input, output, session) {
 
-# first section is for tidying data and creating reactive variables
-
+# first step is tidying the uploaded data
   all_data <- eventReactive(input$upload, {
 
-# reads the uploaded files to create a list of data frames with the same names
-# as the original files + ".xlsx"
+#   reads the uploaded files to create a list of data frames with the same names
+#   as the original files + ".xlsx"
     files <- setNames(
       lapply(input$upload$datapath, read_excel),
       sapply(input$upload$name, basename))
 
-# interpolation of values outside of the CGM's range (over 400 and under 40)
+#   interpolates values outside of the CGM's range (over 400 and under 40)
     files <- lapply(files, highs)
     files <- lapply(files, lows)
 
-# tidies up the data
+#   tidies up the data
     files <- lapply(files, reshape)
 
-# merges the uploaded files, dependent on the number of inputs
-# there's probably a better way to do this but that's not a high priority rn
+#   merges the uploaded files, dependent on the number of inputs
+#   there's probably a better way to do this but that's not a high priority rn
     if (length(files) == 1) {
       all_data <- files[[input$upload$name[[1]] ]]
     }
@@ -369,38 +368,36 @@ server <- function(input, output, session) {
 
 
 # calculates the daily averages and adds a new column for the moving average
-    averages <- eventReactive(input$upload, {
-      averages <- all_data()
+  averages <- eventReactive(input$upload, {
+    averages <- all_data()
 
-      averages <- averages |>
-        group_by(date) |>
-        summarize(daily_avg = mean(value)) |>
-        mutate(ma_12 = rollmean(daily_avg, k = 12, fill = NA, align = "right"))
-    })
+    averages <- averages |>
+      group_by(date) |>
+      summarize(daily_avg = mean(value)) |>
+      mutate(ma_12 = rollmean(daily_avg, k = 12, fill = NA, align = "right"))
+  })
 
 
-# calculates overall average
+# estimates overall average bg value
   overall_average <- eventReactive(input$upload, {
     overall_average <- round(mean(as.vector(averages()$daily_avg)))
   })
 
-# takes earliest date of observations
+# finds earliest date of observations
   first_date <- eventReactive(input$upload, {
     averages()$date[1]
   })
 
-# takes most recent date of observations
+# finds most recent date of observations
   last_date <- eventReactive(input$upload, {
     averages_inverse <- arrange(averages(), desc(date))
     last_date <- averages_inverse$date[1]
   })
 
 
-# second section is for. everything else
 
-
-# updates the start/end dates of the date range input in the top right based
-# on the reactive variables created above
+# updates the initial start/end dates of the date range input in the top right based
+# on the full range of uploaded data
   observe({
     input$upload
 
@@ -439,24 +436,25 @@ server <- function(input, output, session) {
   })
 
 
-# text for the overall average title at the top of the box
+# overall average title at the top of the first box
   output$overall_average <- renderText ({
     req(input$upload)
     paste("OVERALL AVERAGE =", overall_average(), "mg/dL")
   })
 
-# conversion chart
+# conversion chart in the right column of the first box
   output$a1c_eag <- renderTable ({
     conversion_chart_gt
   })
 
 
-# the plot thickens
+# the plot thickens!
+# (time for the daily averages graph)
   output$averages_plot_app <- renderPlot({
      req(input$upload)
 
-# this first part creates a geom-less plot to function as a base for the conditionals
-# so that there's less copy + pasting
+#   this first part creates a geom-less plot to function as a base for the conditionals
+#   so that there's less copy + pasting
     averages_plot_app <- ggplot(averages(), aes(x = date)) +
       annotate(
         "rect",
@@ -479,7 +477,6 @@ server <- function(input, output, session) {
       ) +
       scale_x_date(limits = c(input$interval[1], input$interval[2]), date_breaks = "months", date_labels = "%b") +
       scale_y_continuous(limits = c(100, 320), breaks = seq(100,320,20)) +
-# maybe: geom_hline(yintercept = overall_average(), color = "blue", linetype = "dotted", linewidth = 1) +
       scale_color_manual(
         "Method",
         values = c("#cc6699", "#cc99cc"),
@@ -488,28 +485,28 @@ server <- function(input, output, session) {
       theme_averages_plot()
 
 
-# this bit tests which buttons have been toggled to determine which extra
+# now this bit tests which buttons have been toggled to determine which extra
 # conditions to add to the original empty plot
 
-# both lines toggled on
+#   both lines toggled on
     if (input$mavg == TRUE & input$davg == TRUE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
         geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92)
     }
-# moving average on and daily averages off
+#   moving average on, daily averages off
     if(input$mavg == TRUE & input$davg == FALSE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
         geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92)
     }
-# daily averages on and moving average off
+#   daily averages on, moving average off
     if(input$davg == TRUE & input$mavg == FALSE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
         geom_line(aes(y = ma_12, color = "#cc6699"), alpha = 0)
     }
-# both lines off (empty plot)
+#   both lines off (empty plot)
     else {
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
@@ -525,22 +522,22 @@ server <- function(input, output, session) {
   maxi <- reactiveVal()
   mini <- reactiveVal()
 
-# ascribes initial values to select the most recent week of available data
-# executes upon upload of files
+#   assigns initial values to select the most recent week of available data
+#   executes upon upload of files
     observeEvent(input$upload, {
       maxi(last_date())
       mini(last_date() - 7)
     })
 
-# ascribes minimum and maximum range based on user selection
-# executes upon date range input
+#   assigns minimum and maximum dates based on user selection
+#   executes upon date range input
     observeEvent(input$range, {
       maxi(input$range[2])
       mini(input$range[1])
     })
 
-# changes the date range starter values to display those reactive values until
-# new ones are input
+# changes the date range starter values to display those initial reactive values
+# until new ones are input
   observe({
     input$upload
 
@@ -553,14 +550,14 @@ server <- function(input, output, session) {
   })
 
 # creates a list of multiple conditions so that the data handling will re-execute
-# when either new files are uploaded or the date range is manually adjusted
-  range_n_upload <- reactive({
+# when either new files are uploaded OR the date range is manually adjusted
+  range_or_upload <- reactive({
     list(input$range, input$upload)
   })
 
 # aforementioned data handling
 # selects observations between the range inputs
-  violin_data <- eventReactive(range_n_upload(), {
+  violin_data <- eventReactive(range_or_upload(), {
     violin_data <- all_data()
 
     violin_data <- violin_data |>
@@ -581,7 +578,12 @@ server <- function(input, output, session) {
         y = "Glucose Value (mg/dL)",
         x = "Date"
       ) +
-      scale_y_continuous(limits = c(55, 375), breaks = seq(40, 400, 30)) +
+      scale_y_continuous(limits = c(40, 400), breaks = seq(40, 400, 30)) +
+      scale_fill_manual(
+        values = c("#EE5555", "#FF9900",  "#FFCC66", "#CCCC55", "#99CCFF", "#AAAAFF", "#cc99cc", "#CC6699",
+                 "#EE5555", "#FF9900",  "#FFCC66", "#CCCC55", "#99CCFF", "#AAAAFF", "#cc99cc", "#CC6699",
+                 "#EE5555", "#FF9900",  "#FFCC66", "#CCCC55", "#99CCFF", "#AAAAFF", "#cc99cc", "#CC6699")
+      ) +
       theme_lcars_dark() +
       theme(
         plot.title = element_text(size = 23, margin = margin(b = 30)),
@@ -600,29 +602,30 @@ server <- function(input, output, session) {
 # stacked bar chart showing the ratio of overall time spent high, in range, and low
 # adjusts with numeric inputs on the side
   output$range_time <- renderPlot({
-    req(input$high_lim)
-    req(input$low_lim)
     bar_time <- all_data()
 
     bar_time <- bar_time |>
       mutate(class = "time", range = value) |>
-      mutate(range = replace(range, range > 250, 3)) |>
-      mutate(range = replace(range, range > input$high_lim & range != 3, 2 )) |>
-      mutate(range = replace(range, range <= input$high_lim & range >= input$low_lim, 1 )) |>
-      mutate(range = replace(range, range < input$low_lim & range != 2 & range != 1 & range != 3, 0)) |>
+      mutate(range = replace(range, range > 250, 4)) |>
+      mutate(range = replace(range, range > input$high_lim & range != 4, 3 )) |>
+      mutate(range = replace(range, range <= input$high_lim & range >= input$low_lim, 2 )) |>
+      mutate(range = replace(range, range < input$low_lim & range >= 50, 1)) |>
+      mutate(range = replace(range, range < 50 & range >= 40, 0)) |>
       mutate(range = as.character(range))
 
 
     range_time <- ggplot(bar_time, aes(x = class, y = value, fill = range)) +
       geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
       scale_fill_manual(
-        values = c("#BC4411","#ffcc66", "#99CCFF", "#CD99CE" ),
-        breaks = c("3", "2", "1", "0"),
+        values = c("#BC4411","#ffcc66", "#99CCFF", "#CD99CE", "#cc6699"),
+        breaks = c("4", "3", "2", "1", "0"),
         labels = c(
           "Very High (> 250 mg/dL)",
           paste("High (>", input$high_lim, "mg/dL)"),
           "In Range",
-          paste("Low (<", input$low_lim, "mg/dL)"))
+          paste("Low (<", input$low_lim, "mg/dL)"),
+          "Very Low (< 50 mg/dL)"
+          )
       ) +
       labs(
         caption = "Overall Time in Range ",
@@ -676,6 +679,6 @@ server <- function(input, output, session) {
   })
 }
 
-# colors to revisit: #3366CD #BC4411
+"#3366CD"
 
 shinyApp(ui, server)
