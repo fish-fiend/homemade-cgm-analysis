@@ -12,6 +12,19 @@ library(stats)
 # a lotttt of packages
 
 
+theme_averages_plot <- function() {
+
+  theme(plot.title = element_text(size = 22),
+        axis.title = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 12),
+        plot.margin = margin(20, 20, 20, 20),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))
+  )
+}
+
+
 # A1C to eAG conversion chart
   conversion_chart <- data.frame(
     eAG = c(118, 126, 133, 140, 147, 154, 161, 169, 176, 183, 190),
@@ -43,6 +56,7 @@ library(stats)
 # starter dates for the date range display
   first_date <- Sys.Date() - 90
   last_date <- Sys.Date()
+
 
 
 
@@ -254,7 +268,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
     sides = c(2, 4),
     side_color = c("#000000", "#000000", "#000000", "#000000"),
 
-    right_inputs = inputColumn(
+    left_inputs = inputColumn(
       dateRangeInput(
         "range", h4("Date Range"),
         start = Sys.Date() - 7,
@@ -471,83 +485,35 @@ server <- function(input, output, session) {
         values = c("#cc6699", "#cc99cc"),
         labels = c("Moving Average", "Daily Average")
       ) + theme_lcars_light() +
-      theme(
-        plot.title = element_text(size = 22),
-        axis.title = element_text(size = 15),
-        legend.title = element_text(size = 15),
-        legend.text = element_text(size = 12),
-        plot.margin = margin(25, 10, 25, 25)
-      )
+      theme_averages_plot()
 
 
 # this bit tests which buttons have been toggled to determine which extra
 # conditions to add to the original empty plot
-# (so far unsuccessful in removing the obvious redundancy
-# without fucking up the whole thing)(i don't know why)
 
 # both lines toggled on
     if (input$mavg == TRUE & input$davg == TRUE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92) +
-        theme_lcars_light() +
-        theme(
-          plot.title = element_text(size = 22),
-          axis.title = element_text(size = 15),
-          legend.title = element_text(size = 15),
-          legend.text = element_text(size = 12),
-          plot.margin = margin(20, 20, 20, 20),
-          axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
-          axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))
-        )
+        geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92)
     }
 # moving average on and daily averages off
     if(input$mavg == TRUE & input$davg == FALSE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92) +
-        theme_lcars_light() +
-        theme(
-          plot.title = element_text(size = 22),
-          axis.title = element_text(size = 15),
-          legend.title = element_text(size = 15),
-          legend.text = element_text(size = 12),
-          plot.margin = margin(20, 20, 20, 20),
-          axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
-          axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))
-        )
+        geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92)
     }
 # daily averages on and moving average off
     if(input$davg == TRUE & input$mavg == FALSE){
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_12, color = "#cc6699"), alpha = 0) +
-        theme_lcars_light() +
-        theme(
-          plot.title = element_text(size = 22),
-          axis.title = element_text(size = 15),
-          legend.title = element_text(size = 15),
-          legend.text = element_text(size = 12),
-          plot.margin = margin(20, 20, 20, 20),
-          axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
-          axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))
-        )
+        geom_line(aes(y = ma_12, color = "#cc6699"), alpha = 0)
     }
 # both lines off (empty plot)
     else {
       averages_plot_app <- averages_plot_app +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_12, color = "#cc6699"), alpha = 0) +
-        theme_lcars_light() +
-        theme(
-          plot.title = element_text(size = 22),
-          axis.title = element_text(size = 15),
-          legend.title = element_text(size = 15),
-          legend.text = element_text(size = 12),
-          plot.margin = margin(20, 20, 20, 20),
-          axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
-          axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))
-        )
+        geom_line(aes(y = ma_12, color = "#cc6699"), alpha = 0)
     }
     averages_plot_app
   })
@@ -623,7 +589,7 @@ server <- function(input, output, session) {
         axis.title.x = element_text(margin = margin(t = 15)),
         axis.title.y = element_text(margin = margin(r = 15)),
         axis.text = element_text(size = 12),
-        plot.margin = margin(15, 30, 15, 15),
+        plot.margin = margin(0, 30, 0, 15),
         legend.position = "none"
       )
     glycemic_var
