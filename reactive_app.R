@@ -278,19 +278,19 @@ ui <- lcarsPage(force_uppercase = TRUE,
     sides = c(4),
     side_color = c("#000000", "#000000", "#000000", "#000000"),
 
-    left_inputs =
-      dateRangeInput(
-        "range", h4("Date Range"),
-        start = Sys.Date() - 7,
-        end = Sys.Date(),
-        width = 150
-    ),
     fluidRow(
       column(9,
         plotOutput("glycemic_var", height = 560, click = "violin_click")
       ),
       column(3,
-        lcarsRect(height = 175, color = "#000000"),
+        lcarsRect(height = 50, color = "#000000"),
+        dateRangeInput(
+          "range", h4("Date Range"),
+          start = Sys.Date() - 7,
+          end = Sys.Date(),
+          width = 210
+        ),
+        lcarsRect(height = 15, color = "#000000"),
         htmlOutput("violin_label")
       ),
     )
@@ -615,10 +615,9 @@ server <- function(input, output, session) {
 
 # next part creates a reactive readout beside the plot that displays the mean
 # and standard deviation of whichever day the user clicks on
-
+  violin_date <- reactiveVal(NULL)
   violin_sd <- reactiveVal(NULL)
   violin_mean <- reactiveVal(NULL)
-  violin_date <- reactiveVal(NULL)
 
   observeEvent(input$violin_click, {
 
@@ -642,6 +641,7 @@ server <- function(input, output, session) {
       filter(date == as.Date(selection$date[1], '%Y-%m-%d'))
 
     if(nrow(selection) == 0) {
+      violin_date(NULL)
       violin_sd(NULL)
       violin_mean(NULL)
     }
