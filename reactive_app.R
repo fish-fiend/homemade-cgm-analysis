@@ -232,7 +232,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
       ),
       lcarsToggle(
         inputId = "davg",
-        label = h6("Show Daily Average:"),
+        label = h6("Show Daily Averages:"),
         value = TRUE,
         false_color = "#EE4444"
       ),
@@ -280,18 +280,20 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
     fluidRow(
       column(9,
-        plotOutput("glycemic_var", height = 560, click = "violin_click")
+        plotOutput("glycemic_var", height = 550, click = "violin_click")
       ),
-      column(3,
-        lcarsRect(height = 50, color = "#000000"),
-        dateRangeInput(
-          "range", h4("Date Range"),
-          start = Sys.Date() - 7,
-          end = Sys.Date(),
-          width = 210
-        ),
-        lcarsRect(height = 15, color = "#000000"),
-        htmlOutput("violin_label")
+      inputColumn(
+        column(3,
+          lcarsRect(height = 50, color = "#000000"),
+          dateRangeInput(
+            "range", h4("Date Range"),
+             start = Sys.Date() - 7,
+             end = Sys.Date(),
+             width = 210
+          ),
+          lcarsRect(height = 15, color = "#000000"),
+          htmlOutput("violin_label")
+        )
       ),
     )
   ),
@@ -310,12 +312,12 @@ ui <- lcarsPage(force_uppercase = TRUE,
     ),
 
 # all style no substance
-    left_inputs = inputColumn(
-      lcarsRect(height = 225, color = "#7788FF"),
+    right_inputs = inputColumn(
+      lcarsRect(height = 200, color = "#7788FF"),
     ),
 
 # upper and lower limit selectors for the charts
-    right_inputs = inputColumn(
+    left_inputs = inputColumn(
       numericInput("high_lim", h4("'High' Limit"), value = 180, width = 150),
       lcarsRect(
         height = 14,
@@ -658,6 +660,7 @@ server <- function(input, output, session) {
       label(
         div(id = "violinLabel",
             h4(strong(violin_date())),
+            br(),
             p(violin_mean()),
             p(violin_sd()),
         )
@@ -711,8 +714,8 @@ server <- function(input, output, session) {
       theme_lcars_dark() +
       theme(
         legend.title = element_blank(),
-        plot.caption = element_text(hjust = 0.5, size = 16, margin = margin(t = 15)),
-        legend.text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0.5, size = 18, margin = margin(t = 15)),
+        legend.text = element_text(size = 14),
         axis.text.x = element_blank(),
         plot.margin = margin(32, 28, 28, 28)
       )
@@ -746,8 +749,8 @@ server <- function(input, output, session) {
       theme_lcars_dark() +
       theme(
         legend.title = element_blank(),
-        plot.caption = element_text(hjust = 0.5, size = 16, margin = margin(t = 15)),
-        legend.text = element_text(size = 12),
+        plot.caption = element_text(hjust = 0.5, size = 18, margin = margin(t = 15)),
+        legend.text = element_text(size = 14),
         axis.text.x = element_blank(),
         plot.margin = margin(28, 28, 28, 28),
       )
@@ -755,6 +758,6 @@ server <- function(input, output, session) {
   })
 }
 
-"#3366CD"
+# "#3366CD"
 
 shinyApp(ui, server)
