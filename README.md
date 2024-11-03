@@ -9,7 +9,7 @@
 
 <br>
 
-### <s>The website hosted by shiny.io is currently having a couple minor issues——the date range seems to be lagging in respect to the violin plot and the first letter of the title of the bar chart on the left is cut off. For some reason these problems are only present on the web version though, not when I run it from RStudio??? I'm working on it. </s> fixed it 👍
+### <s>The website hosted by shiny.io is currently having a couple minor issues——the date range seems to be lagging in respect to the violin plot and the first letter of the title of the bar chart on the left is cut off. For some reason these problems are only present on the web version though, not when I run it from RStudio??? I'm working on it</s>. fixed it 👍
 
 <br>
 
