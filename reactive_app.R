@@ -82,6 +82,17 @@ ui <- lcarsPage(force_uppercase = TRUE,
       div {
         font-family: Antonio;
       }
+
+      #violinLabel {
+        text-align: left;
+        border-width: 2px;
+        border-style: solid;
+        border-color: #FFCC66;
+        border-radius: 25px;
+        width: 210px;
+        padding: 10px;
+      }
+
     "))
   ),
 
@@ -264,24 +275,24 @@ ui <- lcarsPage(force_uppercase = TRUE,
   lcarsBox(
     corners = c(1, 2, 3, 4),
     color = c("#CCCC55", "#CCCC55", "#CCCC55", "#CCCC55"),
-    sides = c(2, 4),
+    sides = c(4),
     side_color = c("#000000", "#000000", "#000000", "#000000"),
 
-    left_inputs = inputColumn(
+    left_inputs =
       dateRangeInput(
         "range", h4("Date Range"),
         start = Sys.Date() - 7,
         end = Sys.Date(),
         width = 150
-      )
     ),
     fluidRow(
-      column(12,
+      column(9,
         plotOutput("glycemic_var", height = 560, click = "violin_click")
-      )
-    ),
-    fluidRow(
-      lcarsRect(uiOutput("violin_info"), height = 50)
+      ),
+      column(3,
+        lcarsRect(height = 175, color = "#000000"),
+        htmlOutput("violin_label")
+      ),
     )
   ),
 
@@ -586,24 +597,28 @@ server <- function(input, output, session) {
       scale_fill_manual(
         values = c("#EE5555", "#FF9900",  "#FFCC66", "#CCCC55", "#99CCFF", "#AAAAFF", "#cc99cc", "#CC6699",
                  "#EE5555", "#FF9900",  "#FFCC66", "#CCCC55", "#99CCFF", "#AAAAFF", "#cc99cc", "#CC6699",
+                 "#EE5555", "#FF9900",  "#FFCC66", "#CCCC55", "#99CCFF", "#AAAAFF", "#cc99cc", "#CC6699",
                  "#EE5555", "#FF9900",  "#FFCC66", "#CCCC55", "#99CCFF", "#AAAAFF", "#cc99cc", "#CC6699")
       ) +
       theme_lcars_dark() +
       theme(
-        plot.title = element_text(size = 23, margin = margin(b = 30)),
+        plot.title = element_text(size = 23, margin = margin(b = 25)),
         axis.title = element_text(size = 15),
         axis.title.x = element_text(margin = margin(t = 15)),
         axis.title.y = element_text(margin = margin(r = 15)),
         axis.text = element_text(size = 12),
-        plot.margin = margin(0, 30, 0, 15),
+        plot.margin = margin(0, 10, 0, 15),
         legend.position = "none"
       )
     glycemic_var
   })
 
+# next part creates a reactive readout beside the plot that displays the mean
+# and standard deviation of whichever day the user clicks on
+
   violin_sd <- reactiveVal(NULL)
   violin_mean <- reactiveVal(NULL)
-
+  violin_date <- reactiveVal(NULL)
 
   observeEvent(input$violin_click, {
 
@@ -618,9 +633,10 @@ server <- function(input, output, session) {
                     threshold = 45
                     )
 
+    violin_date(selection$date[1])
+
     violin_info_df <- violin_data |>
       filter(date == as.factor(selection$date[1]))
-
 
     mean <- averages |>
       filter(date == as.Date(selection$date[1], '%Y-%m-%d'))
@@ -630,12 +646,34 @@ server <- function(input, output, session) {
       violin_mean(NULL)
     }
     else {
-      violin_sd(paste("Standard Deviation =", round(sd(violin_info_df$value), digits = 1)))
-      violin_mean(paste("Mean =", round(mean$daily_avg[1])))
+      violin_sd(paste("Standard Deviation =", round(sd(violin_info_df$value), digits = 1), "mg/dL"))
+      violin_mean(paste("Mean =", round(mean$daily_avg[1]), "mg/dL"))
     }
   })
 
-  output$violin_info <- renderUI(div(violin_sd(), br(), violin_mean()))
+  label <- reactiveVal(NULL)
+
+  observe({
+    if(!is.null(input$violin_click)) {
+      label(
+        div(id = "violinLabel",
+            h4(strong(violin_date())),
+            p(violin_mean()),
+            p(violin_sd()),
+        )
+      )
+    }
+    else {
+      label(div(id = "violinLabel",
+              p("click the graph to display daily mean and standard deviation")
+              )
+      )
+    }
+  })
+
+
+  output$violin_label <- renderUI(label())
+
 
 # stacked bar chart showing the ratio of overall time spent high, in range, and low
 # adjusts with numeric inputs on the side
