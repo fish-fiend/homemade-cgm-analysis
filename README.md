@@ -5,7 +5,7 @@
   [clarity_1023_0120.xlsx](https://github.com/user-attachments/files/17535653/clarity_1023_0120.xlsx) ...
   [clarity_export_90.xlsx](https://github.com/user-attachments/files/17535655/clarity_export_90.xlsx)
   
-  I also uploaded a [demo video](https://youtu.be/vgO8JMuLfws) to youtube for more information about using the app and interpreting results. It's not going to be completely up to date, but it's probably close enough.
+  I also uploaded a [demo video](https://youtu.be/vgO8JMuLfws) to youtube for more information about using the app and interpreting results. It's not going to be completely up to date though. 
 
 <br>
 
