@@ -11,7 +11,7 @@ library(zoo)
 library(stats)
 # a lotttt of packages
 
-
+# custom theme for the averages graph
 theme_averages_plot <- function() {
 
   theme(plot.title = element_text(size = 22),
@@ -33,6 +33,18 @@ theme_averages_plot <- function() {
     gt()
 
 
+# functions for reincorporating extreme readings (preventing NAs) by
+# replacing "High" or "Low" values with 400 and 40
+  highs <- function(x) {
+    mutate(x, ...8 = replace(...8, ...8 == "High", "400" ))
+  }
+
+  lows <- function(x) {
+    mutate(x, ...8 = replace(...8, ...8 == "Low", "40" ))
+  }
+
+
+
 # function for removing irrelevant data
   reshape <- function(file) {
     file[-(1:19),] |>
@@ -41,16 +53,6 @@ theme_averages_plot <- function() {
       filter(!is.na(value))
   }
 
-# functions for reincorporating extreme readings (preventing NAs)
-# replacing "High" or "Low" values with 400 and 40 to get a slightly more
-# accurate estimate
-  highs <- function(x) {
-    mutate(x, ...8 = replace(...8, ...8 == "High", "400" ))
-  }
-
-  lows <- function(x) {
-    mutate(x, ...8 = replace(...8, ...8 == "Low", "40" ))
-  }
 
 # starter dates for the date range display
   first_date <- Sys.Date() - 90
@@ -90,14 +92,23 @@ ui <- lcarsPage(force_uppercase = TRUE,
         border-color: #FFCC66;
         border-radius: 25px;
         width: 210px;
-        padding: 10px;
+        padding: 8px;
       }
 
+      .lcars-btn, .lcars-btn-filtered {
+          height: 24px;
+          padding-top: 2px;
+          padding-bottom: 2px;
+          text-align: left;
+      }
+
+      .modal-footer {
+        border-top: 0px;
+      }
     "))
   ),
 
 # title
-# "B.R.A.T. (Blood-sugar Readings: Average Trends)"
   lcarsHeader("[INSERT TITLE HERE]",
               color = "#FF9900",
               title_right = FALSE),
@@ -237,14 +248,29 @@ ui <- lcarsPage(force_uppercase = TRUE,
         false_color = "#EE4444"
       ),
       lcarsRect(
-        height = 170,
-        color = "#CC6699"
+        height = 90,
+        color = "#CC6699",
+        width = 150
       ),
+      lcarsRadioToggle("date_lines", h6("X-Axis Scale:"),
+        c("Months" = "m", "Weeks" = "w", "Days" = "d"),
+        label_color = "#CCCC55",
+        width = 150
+      ),
+      lcarsButton("help_averages", label = p("help"))
     ),
 
 # the actual plot itself
     fluidRow(
-      column (12, plotOutput("averages_plot_app", height = 450))
+      column(12,
+          plotOutput("averages_plot", height = 450,
+            dblclick = "click_averages",
+            brush = brushOpts(
+              "brush_averages",
+              resetOnNew = TRUE
+            )
+          )
+      )
     ),
 
 # displays the conversion chart (a1c to eag) on the right side
@@ -344,7 +370,36 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 server <- function(input, output, session) {
 
-# first step is tidying the uploaded data
+  # instructions for downloading/uploading raw data (beneath the bracket)
+  output$instructions <- renderUI ({
+    if (input$instructions == TRUE){
+      div(
+        br(),
+        h4("HOW TO DOWNLOAD YOUR RAW CGM DATA IN THE CORRECT FORMAT:"),
+        p("Step 1: Log into Dexcom Clarity (at https://clarity.dexcom.com/). On the
+          far right side of the Overview page, just above the 'Sensor Usage' widget,
+          is an icon that looks like a spreadsheet with an arrow pointing right."),
+        p("Step 2: Click that icon, select a date range, then press export. The
+          data will automatically download in Numbers. 90 days is the automatic
+           date range limit so if you would like to analyze a longer timespan,
+           you can download multiple 90 day datasets (up to 4) and upload them all
+           simultaneously to this app."),
+        p("Step 3: Open it in numbers then go to File > Export To > Excel."),
+        p("Step 4: Name the file whatever you want, then come back here and hit
+          import! Hold down command while clicking on files to select
+          multiple files at once."),
+        br()
+      )
+    }
+  })
+
+# conversion chart in the right column of the first box
+  output$a1c_eag <- renderTable ({
+    conversion_chart_gt
+  })
+
+
+# tidying the uploaded data
   all_data <- eventReactive(input$upload, {
 
 #   reads the uploaded files to create a list of data frames with the same names
@@ -400,6 +455,13 @@ server <- function(input, output, session) {
     overall_average <- round(mean(as.vector(averages()$daily_avg)))
   })
 
+# overall average title at the top of the first box
+  output$overall_average <- renderText ({
+    req(input$upload)
+    paste("OVERALL AVERAGE =", overall_average(), "mg/dL")
+  })
+
+
 # finds earliest date of observations
   first_date <- eventReactive(input$upload, {
     averages()$date[1]
@@ -410,8 +472,6 @@ server <- function(input, output, session) {
     averages_inverse <- arrange(averages(), desc(date))
     last_date <- averages_inverse$date[1]
   })
-
-
 
 # updates the initial start/end dates of the date range input in the top right based
 # on the full range of uploaded data
@@ -429,60 +489,70 @@ server <- function(input, output, session) {
   })
 
 
-# instructions for downloading/uploading raw data (beneath the bracket)
-  output$instructions <- renderUI ({
-    if (input$instructions == TRUE){
-      div(
-        br(),
-        h4("HOW TO DOWNLOAD YOUR RAW CGM DATA IN THE CORRECT FORMAT:"),
-        p("Step 1: Log into Dexcom Clarity (at https://clarity.dexcom.com/). On the
-          far right side of the Overview page, just above the 'Sensor Usage' widget,
-          is an icon that looks like a spreadsheet with an arrow pointing right."),
-        p("Step 2: Click that icon, select a date range, then press export. The
-          data will automatically download in Numbers. 90 days is the automatic
-           date range limit so if you would like to analyze a longer timespan,
-           you can download multiple 90 day datasets (up to 4) and upload them all
-           simultaneously to this app."),
-        p("Step 3: Open it in numbers then go to File > Export To > Excel."),
-        p("Step 4: Name the file whatever you want, then come back here and hit
-          import! Hold down command while clicking on files to select
-          multiple files at once."),
-        br()
-      )
+# reactive values that control the graph's x-axis/range
+  xmin_averages <- reactiveVal()
+  xmax_averages <- reactiveVal()
+
+# when date range is manually changed or automatically adjusted after data is uploaded,
+# range of the graph is determined by those inputs
+  observeEvent(input$interval, {
+    xmin_averages(input$interval[1])
+    xmax_averages(input$interval[2])
+  })
+
+# when the graph is brushed and double clicked, range of the graph is determined
+# by the minimum and maximum x values of the brushed area
+  observeEvent(input$click_averages, {
+    brush <- input$brush_averages
+      if(!is.null(brush)) {
+        xmin_averages(as.Date(brush$xmin, format = "%Y-%m-%d"))
+        xmax_averages(as.Date(brush$xmax, format = "%Y-%m-%d"))
+      }
+      else {
+        xmin_averages(input$interval[1])
+        xmax_averages(input$interval[2])
+      }
+  })
+
+
+# reactive variables to change the scale and labels of the x-axis
+  averages_breaks <- reactiveVal()
+  averages_labels <- reactiveVal()
+
+  observeEvent(input$date_lines, {
+    if(input$date_lines == "m") {
+      averages_breaks("months")
+      averages_labels("%b")
     }
-  })
-
-
-# overall average title at the top of the first box
-  output$overall_average <- renderText ({
-    req(input$upload)
-    paste("OVERALL AVERAGE =", overall_average(), "mg/dL")
-  })
-
-# conversion chart in the right column of the first box
-  output$a1c_eag <- renderTable ({
-    conversion_chart_gt
+    if(input$date_lines == "w") {
+      averages_breaks("weeks")
+      averages_labels("%b-%d")
+    }
+    if(input$date_lines == "d") {
+      averages_breaks("days")
+      averages_labels("%m-%d")
+    }
   })
 
 
 # the plot thickens!
 # (time for the daily averages graph)
-  output$averages_plot_app <- renderPlot({
+  output$averages_plot <- renderPlot({
      req(input$upload)
 
 #   this first part creates a geom-less plot to function as a base for the conditionals
 #   so that there's less copy + pasting
-    averages_plot_app <- ggplot(averages(), aes(x = date)) +
+    averages_plot <- ggplot(averages(), aes(x = date)) +
       annotate(
         "rect",
-        xmin = input$interval[1], xmax = input$interval[2],
+        xmin = xmin_averages(), xmax = xmax_averages(),
         ymin = 100, ymax = input$rect,
         fill = "#99CCFF",
         alpha = 0.25
       ) +
       annotate(
         "rect",
-        xmin = input$interval[1], xmax = input$interval[2],
+        xmin = xmin_averages(), xmax = xmax_averages(),
         ymin = input$rect, ymax = 320,
         fill = "#ffcc66",
         alpha = 0.25
@@ -492,7 +562,8 @@ server <- function(input, output, session) {
         x = "Date",
         y = "Value (mg/dL)"
       ) +
-      scale_x_date(limits = c(input$interval[1], input$interval[2]), date_breaks = "months", date_labels = "%b") +
+      scale_x_date(limits = c(xmin_averages(), xmax_averages()),
+                              date_breaks = averages_breaks(), date_labels = averages_labels()) +
       scale_y_continuous(limits = c(100, 320), breaks = seq(100,320,20)) +
       scale_color_manual(
         "Method",
@@ -507,29 +578,29 @@ server <- function(input, output, session) {
 
 #   both lines toggled on
     if (input$mavg == TRUE & input$davg == TRUE){
-      averages_plot_app <- averages_plot_app +
+      averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
         geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92)
     }
 #   moving average on, daily averages off
     if(input$mavg == TRUE & input$davg == FALSE){
-      averages_plot_app <- averages_plot_app +
+      averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
         geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92)
     }
 #   daily averages on, moving average off
     if(input$davg == TRUE & input$mavg == FALSE){
-      averages_plot_app <- averages_plot_app +
+      averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
         geom_line(aes(y = ma_12, color = "#cc6699"), alpha = 0)
     }
 #   both lines off (empty plot)
     else {
-      averages_plot_app <- averages_plot_app +
+      averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
         geom_line(aes(y = ma_12, color = "#cc6699"), alpha = 0)
     }
-    averages_plot_app
+    averages_plot
   })
 
 
@@ -539,18 +610,30 @@ server <- function(input, output, session) {
   maxi <- reactiveVal()
   mini <- reactiveVal()
 
-#   assigns initial values to select the most recent week of available data
-#   executes upon upload of files
+# assigns initial values to select the most recent week of available data
+# executes upon upload of files
     observeEvent(input$upload, {
       maxi(last_date())
       mini(last_date() - 7)
     })
 
-#   assigns minimum and maximum dates based on user selection
-#   executes upon date range input
+# assigns minimum and maximum dates based on user selection
+# prompts a warning modal if date range exceeds 30 days
+# executes upon date range input
     observeEvent(input$range, {
-      maxi(input$range[2])
-      mini(input$range[1])
+      if ((input$range[2]-input$range[1]) > 30) {
+        showModal(
+          modalDialog(
+            "PLEASE SELECT A SMALLER DATE RANGE INTERVAL!",
+            footer = modalButton("OKAY"),
+            size = c("s")
+          )
+        )
+      }
+      else {
+        maxi(input$range[2])
+        mini(input$range[1])
+      }
     })
 
 # changes the date range starter values to display those initial reactive values
@@ -566,21 +649,20 @@ server <- function(input, output, session) {
     )
   })
 
-# creates a list of multiple conditions so that the data handling will re-execute
-# when either new files are uploaded OR the date range is manually adjusted
-  range_or_upload <- reactive({
-    list(input$range, input$upload)
-  })
 
 # aforementioned data handling
-# selects observations between the range inputs
-  violin_data <- eventReactive(range_or_upload(), {
-    violin_data <- all_data()
+# selects observations between the range inputs from the overall data
+# executes when either new files are uploaded OR the date range is manually adjusted
+  violin_data <- eventReactive({
+                    input$range
+                    input$upload
+                 },
+  {violin_data <- all_data()
 
-    violin_data <- violin_data |>
-      filter(date >= mini() & date <= maxi()) |>
-      group_by(date) |>
-      mutate(value = as.numeric(value), date = as.factor(date))
+   violin_data <- violin_data |>
+     filter(date >= mini() & date <= maxi()) |>
+     group_by(date) |>
+     mutate(value = as.numeric(value), date = as.factor(date))
   })
 
 
@@ -617,15 +699,18 @@ server <- function(input, output, session) {
 
 # next part creates a reactive readout beside the plot that displays the mean
 # and standard deviation of whichever day the user clicks on
+
+# first create the necessary reactive variables
   violin_date <- reactiveVal(NULL)
   violin_sd <- reactiveVal(NULL)
   violin_mean <- reactiveVal(NULL)
 
+
+# assign value depending on selected day
   observeEvent(input$violin_click, {
 
     violin_data <- violin_data()
     averages <- averages()
-
     selection <- nearPoints(
                     violin_data,
                     input$violin_click,
@@ -633,8 +718,6 @@ server <- function(input, output, session) {
                     maxpoints = 5,
                     threshold = 45
                     )
-
-    violin_date(selection$date[1])
 
     violin_info_df <- violin_data |>
       filter(date == as.factor(selection$date[1]))
@@ -648,13 +731,17 @@ server <- function(input, output, session) {
       violin_mean(NULL)
     }
     else {
+      violin_date(selection$date[1])
       violin_sd(paste("Standard Deviation =", round(sd(violin_info_df$value), digits = 1), "mg/dL"))
       violin_mean(paste("Mean =", round(mean$daily_avg[1]), "mg/dL"))
     }
   })
 
+
+# reactive variable for the display of the daily mean and sd
   label <- reactiveVal(NULL)
 
+# creates html object to display mean and sd
   observe({
     if(!is.null(input$violin_click)) {
       label(
@@ -674,8 +761,8 @@ server <- function(input, output, session) {
     }
   })
 
-
   output$violin_label <- renderUI(label())
+
 
 
 # stacked bar chart showing the ratio of overall time spent high, in range, and low
@@ -707,7 +794,7 @@ server <- function(input, output, session) {
           )
       ) +
       labs(
-        caption = "Overall Time in Range ",
+        caption = "Time in Range ",
         x = NULL,
         y = NULL
       ) +
@@ -721,6 +808,7 @@ server <- function(input, output, session) {
       )
     range_time
   })
+
 
 # stacked bar chart showing percentage of days in range
 # adjusts with the slider
