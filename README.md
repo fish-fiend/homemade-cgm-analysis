@@ -5,11 +5,11 @@
   [clarity_1023_0120.xlsx](https://github.com/user-attachments/files/17535653/clarity_1023_0120.xlsx) ...
   [clarity_export_90.xlsx](https://github.com/user-attachments/files/17535655/clarity_export_90.xlsx)
   
-  I also uploaded a [demo video](https://youtu.be/vgO8JMuLfws) to youtube for more information about using the app and interpreting results. It's not going to be completely up to date, but it's probably close enough.
+  I also uploaded a [demo video](https://youtu.be/vgO8JMuLfws) to youtube for more information about using the app and interpreting results. It's not going to be completely up to date though. 
 
 <br>
 
-### The website hosted by shiny.io is currently having a couple minor issues——the date range seems to be lagging in respect to the violin plot and the first letter of the title of the bar chart on the left is cut off. For some reason these problems are only present on the web version though, not when I run it from RStudio??? I'm working on it. 
+### <s>The website hosted by shiny.io is currently having a couple minor issues——the date range seems to be lagging in respect to the violin plot and the first letter of the title of the bar chart on the left is cut off. For some reason these problems are only present on the web version though, not when I run it from RStudio??? I'm working on it</s>. fixed it 👍
 
 <br>
 
