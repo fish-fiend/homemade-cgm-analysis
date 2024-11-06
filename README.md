@@ -9,16 +9,13 @@
 
 <br>
 
-### <s>The website hosted by shiny.io is currently having a couple minor issues——the date range seems to be lagging in respect to the violin plot and the first letter of the title of the bar chart on the left is cut off. For some reason these problems are only present on the web version though, not when I run it from RStudio??? I'm working on it</s>. fixed it 👍
-
-<br>
-
 ### UPCOMING FEATURES
   - faster upload processing
     - should improve gradually as I refine the code, eliminating redundancy in data processing and graphic rendering
   - option to change units between mmol/L and mg/dL (currently mg/dL is the only choice)
     - isn't too hard conceptually, but will be very boring and time consuming
-  - little buttons that display tips/info when pressed
-  - aesthetic changes: dark mode option for the averages graph (maybe), better colors for the violin plot
+  - <s>little buttons that display tips/info when pressed</s> ☑️
+  - aesthetic changes: dark mode option for the averages graph (maybe)
+  - <s>better colors for the violin plot</s> ☑️
   - <s>make the font more readable</s> ☑️
   - <s>percent of time in range (pie chart perhaps?)</s> ☑️
