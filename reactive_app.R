@@ -96,14 +96,14 @@ ui <- lcarsPage(force_uppercase = TRUE,
       }
 
       .lcars-btn, .lcars-btn-filtered {
-          height: 30px;
-          width: 30px;
+          height: 29px;
+          width: 29px;
           padding-left: 6px;
           padding-top: 0px;
           text-align: center;
           border: 2px solid #FFFFCD;
           border-radius: 25px;
-          font-size: 16px;
+          font-size: 14px;
       }
 
       .modal-footer {
@@ -134,19 +134,19 @@ ui <- lcarsPage(force_uppercase = TRUE,
       column(12,
         div(
           br(),
-          h4("After data is uploaded, a graph will appear in the box below, as well
-            as an overall estimated daily average and bar plot which shows the
-            percentage of days with an average value within your selected ideal range.
-            The breadth of this range is adjustable using the slider to the right."),
-          h4("The chart on the right side of the box displays a rough estimate of A1C
-            based on average blood sugar. The overall average displayed at the top
-            of the box will not necessarily be compatible with this chart as A1C
-            is determined by only the last 90 days of blood sugar behaviour. It's
-            best used as a general indication of blood sugar control, not a predictor
-            of a lab value."),
+          h4("This whole thing was supposed to be a single, unreactive graph with
+             no user interface. Obviously, things got a little out of hand. As I worked on
+             the original graph of daily averages over time, I realized that the
+             type of CGM analysis Dexcom offers its users is lacking in several
+             regards. There aren't any meaningful long-term trend visualizations
+             and the available graphical representations are often unintuitive
+             (not to mention boring). This is my attempt to fill those gaps in a
+             fun, novel way while learning how to code with R and Shiny."),
           br(),
-          h5("Disclaimer: None of the graphics will render unless you upload data first. Also
-           you have to use this page at full width or nothing aligns properly. Enjoy! "),
+          h5("Disclaimer: None of the graphics will render unless you upload data
+            first. Also, you have to use this page at full width or nothing aligns
+            properly. Press the 'i' icons at the bottom right of each section for
+            more information about how to interact with the plots."),
         )
       )
     ),
@@ -384,35 +384,92 @@ server <- function(input, output, session) {
   output$help_averages <- renderUI ({
     lcarsButton(
       "help_averages",
-      label = p("?", style = "color: #FFFFCD;"),
-      color = "#222222"
+      label = "",
+      icon = icon(name = "info", style = "color: #FFFFCD;"),
+      color = "#222222",
+      hover_color = "eggplant"
     )
   })
 
   output$help_violins <- renderUI ({
     lcarsButton(
       "help_violins",
-      label = p("?", style = "color: #FFFFCD;"),
-      color = "#222222"
+      label = "",
+      icon = icon(name = "info", style = "color: #FFFFCD;"),
+      color = "#222222",
+      hover_color = "eggplant"
     )
   })
 
   output$help_bars <- renderUI ({
     lcarsButton(
       "help_bars",
-      label = p("?", style = "color: #FFFFCD;"),
-      color = "#222222"
+      label = "",
+      icon = icon(name = "info", style = "color: #FFFFCD;"),
+      color = "#222222",
+      hover_color = "eggplant"
     )
   })
 
   observeEvent(input$help_averages, {
+      showModal(
+        modalDialog(
+          title = h4("INFO — DAILY AVERAGES",  style = "color: #000000;"),
+          div(
+            p("- each point represents the average of all CGM readings from a given day", style = "color: #000000;"),
+            p("- drag the mouse to highlight an area on the graph, then double
+              click to zoom in——double click again to reset", style = "color: #000000;"),
+            p("- use the 'X-Axis Scale' buttons to adjust labels on the x-axis", style = "color: #000000;"),
+            p("- the date range above this plot changes the range of the graph
+              and the slider adjusts the blue shaded 'ideal range'", style = "color: #000000;"),
+            hr(),
+            p("Disclaimer: the overall average is a comprehensive estimate based
+              on all available CGM data but it is not necessarily an accurate
+              predictor of A1C %. The recommended use of the conversion chart is
+              as a reference for determining individual goals.", style = "color: #000000; font-size: 12px;")
+          ),
+          footer = modalButton("OKAY"),
+          size = c("m")
+        )
+      )
+  })
+
+  observeEvent(input$help_violins, {
     showModal(
       modalDialog(
-        title = ""
+        title = h4("INFO — DAILY GLYCEMIC VARIATION",  style = "color: #000000;"),
+        div(
+          p("- each object is a sort of density plot——the width represents the
+            number of observations at a certain blood sugar level", style = "color: #000000;"),
+          p("- click on a shape to reveal the average glucose value and standard
+            deviation of data from that day", style = "color: #000000;"),
+          hr(),
+          p("Disclaimer: recommended date range is around 10 days or less.", style = "color: #000000; font-size: 12px;")
+        ),
+        footer = modalButton("DISMISS"),
+        size = c("m")
       )
     )
   })
 
+  observeEvent(input$help_bars, {
+    showModal(
+      modalDialog(
+        title = h4("INFO — TIME IN RANGE CHARTS", style = "color: #000000;"),
+        div(
+          p("- the plot on the left shows the distribution of time spent very high,
+            high, in range, low, and very low", style = "color: #000000;"),
+          p("- the high and low limits can be adjusted with the numeric inputs
+            to the left", style = "color: #000000;"),
+          p("- the plot on the right shows the percent of days where the daily
+            average is at or lower than the limit specified with the slider at
+            the top right of the page", style = "color: #000000;")
+        ),
+        footer = modalButton("OKAY"),
+        size = c("m")
+      )
+    )
+  })
 
 
   # instructions for downloading/uploading raw data (beneath the bracket)
