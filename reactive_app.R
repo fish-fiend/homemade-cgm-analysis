@@ -96,10 +96,14 @@ ui <- lcarsPage(force_uppercase = TRUE,
       }
 
       .lcars-btn, .lcars-btn-filtered {
-          height: 24px;
-          padding-top: 2px;
-          padding-bottom: 2px;
-          text-align: left;
+          height: 30px;
+          width: 30px;
+          padding-left: 6px;
+          padding-top: 0px;
+          text-align: center;
+          border: 2px solid #FFFFCD;
+          border-radius: 25px;
+          font-size: 16px;
       }
 
       .modal-footer {
@@ -121,7 +125,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
     inputColumn(
       lcarsRect(color = "#9999FF", height = 24, round = c("both")),
       lcarsRect(color = "#cc99cc", height = 24, round = c("both")),
-      lcarsButton("button", "", color = "golden-tanoi"),
+      lcarsRect(color = "golden-tanoi", height = 60, width = 150),
       lcarsRect(color = "#EE5555", height = 24, round = c("both"))
     ),
 
@@ -131,15 +135,15 @@ ui <- lcarsPage(force_uppercase = TRUE,
         div(
           br(),
           h4("After data is uploaded, a graph will appear in the box below, as well
-          as an overall estimated daily average and bar plot which shows the
-          percentage of days with an average value within your selected ideal range.
-          The breadth of this range is adjustable using the slider to the right."),
+            as an overall estimated daily average and bar plot which shows the
+            percentage of days with an average value within your selected ideal range.
+            The breadth of this range is adjustable using the slider to the right."),
           h4("The chart on the right side of the box displays a rough estimate of A1C
-          based on average blood sugar. The overall average displayed at the top
-          of the box will not necessarily be compatible with this chart as A1C
-          is determined by only the last 90 days of blood sugar behaviour. It's
-          best used as a general indication of blood sugar control, not a predictor
-          of a lab value."),
+            based on average blood sugar. The overall average displayed at the top
+            of the box will not necessarily be compatible with this chart as A1C
+            is determined by only the last 90 days of blood sugar behaviour. It's
+            best used as a general indication of blood sugar control, not a predictor
+            of a lab value."),
           br(),
           h5("Disclaimer: None of the graphics will render unless you upload data first. Also
            you have to use this page at full width or nothing aligns properly. Enjoy! "),
@@ -227,6 +231,8 @@ ui <- lcarsPage(force_uppercase = TRUE,
     title = textOutput("overall_average"),
     title_color = "atomic-tangerine",
 
+    subtitle = uiOutput("help_averages"),
+
 # creates the buttons on the left side which control the lines on the plot
     left_inputs = inputColumn(
       lcarsToggle(
@@ -256,9 +262,9 @@ ui <- lcarsPage(force_uppercase = TRUE,
         c("Months" = "m", "Weeks" = "w", "Days" = "d"),
         label_color = "#CCCC55",
         width = 150
-      ),
-      lcarsButton("help_averages", label = p("help"))
+      )
     ),
+
 
 # the actual plot itself
     fluidRow(
@@ -272,6 +278,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
           )
       )
     ),
+
 
 # displays the conversion chart (a1c to eag) on the right side
     right_inputs = inputColumn(
@@ -299,6 +306,8 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # box for the violin plot
   lcarsBox(
+    subtitle = uiOutput("help_violins"),
+
     corners = c(1, 2, 3, 4),
     color = c("#CCCC55", "#CCCC55", "#CCCC55", "#CCCC55"),
     sides = c(4),
@@ -326,6 +335,8 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # box for the bar charts
   lcarsBox(
+    subtitle = uiOutput("help_bars"),
+
     corners = c(1, 2, 3, 4),
     color = c("#AA99FF", "#AA99FF", "#AA99FF", "#AA99FF"),
     sides = c(1, 2, 3, 4),
@@ -369,6 +380,40 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 
 server <- function(input, output, session) {
+
+  output$help_averages <- renderUI ({
+    lcarsButton(
+      "help_averages",
+      label = p("?", style = "color: #FFFFCD;"),
+      color = "#222222"
+    )
+  })
+
+  output$help_violins <- renderUI ({
+    lcarsButton(
+      "help_violins",
+      label = p("?", style = "color: #FFFFCD;"),
+      color = "#222222"
+    )
+  })
+
+  output$help_bars <- renderUI ({
+    lcarsButton(
+      "help_bars",
+      label = p("?", style = "color: #FFFFCD;"),
+      color = "#222222"
+    )
+  })
+
+  observeEvent(input$help_averages, {
+    showModal(
+      modalDialog(
+        title = ""
+      )
+    )
+  })
+
+
 
   # instructions for downloading/uploading raw data (beneath the bracket)
   output$instructions <- renderUI ({
@@ -475,9 +520,7 @@ server <- function(input, output, session) {
 
 # updates the initial start/end dates of the date range input in the top right based
 # on the full range of uploaded data
-  observe({
-    input$upload
-
+  observeEvent(input$upload, {
     updateDateRangeInput(
       session,
       "interval",
@@ -638,9 +681,7 @@ server <- function(input, output, session) {
 
 # changes the date range starter values to display those initial reactive values
 # until new ones are input
-  observe({
-    input$upload
-
+  observeEvent(input$upload, {
     updateDateRangeInput(
       session,
       "range",
