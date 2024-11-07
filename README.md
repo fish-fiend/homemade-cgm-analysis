@@ -6,8 +6,7 @@
   [clarity_1023_0120.xlsx](https://github.com/user-attachments/files/17535653/clarity_1023_0120.xlsx) ...
   [clarity_0121_04_19.xlsx](https://github.com/user-attachments/files/17653057/clarity_0121_04_19.xlsx)
   
-  I also uploaded a [demo video](https://youtu.be/vgO8JMuLfws) to youtube for more information about using the app and interpreting results. It's not going to be completely up to date though. 
-
+  I also uploaded some [demo videos]([https://youtu.be/vgO8JMuLfws](https://youtube.com/playlist?list=PLpsepC7HUFaiFU9l8KAzZUbhitjZ4fhT3&si=3tIpibFGllk_95j1)) to youtube for more information about using the app and interpreting results. They will almost definitely be slightly outdated though.
 <br>
 
 
