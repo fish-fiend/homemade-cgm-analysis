@@ -57,16 +57,16 @@ library(zoo)
 
 # moving averages
   daily_averages <- clarity_avgs |>
-    mutate(ma_12 = rollmean(daily_avg, k = 12, fill = NA, align = "right")) |>
-    filter(!is.na(ma_12))
+    mutate(ma_11 = rollmean(daily_avg, k = 11, fill = NA, align = "right")) |>
+    filter(!is.na(ma_11))
 
 # cubic spline?
 
-  m1 <- lm(daily_avg ~ bs(date, df = 12), data = daily_averages)
+  m1 <- lm(daily_avg ~ bs(date, df = 52), data = daily_averages)
   daily_averages_m1 <- mutate(daily_averages, cubic = fitted(m1))
 
   spline_plot <- ggplot(daily_averages_m1, aes(date, daily_avg)) +
-    geom_line(aes(y = daily_avg), color = "#cc99cc", linewidth = 0.9) +
+    geom_line(aes(y = daily_avg), color = "#cc99cc") +
     geom_line(aes(date, cubic), color = "#cc6699", linewidth = 0.9) +
     theme_bw()
 
@@ -99,7 +99,7 @@ library(zoo)
       alpha = 0.25
     ) +
     geom_line(aes(y = daily_avg), color = "#cc99cc") +
-    geom_line(aes(y = ma_12), color = "#cc6699") +
+    geom_line(aes(y = ma_11), color = "#cc6699") +
     geom_line(aes(y = cubic), color = "#99e", linewidth = 0.92) +
     labs(
       title = "Average Daily Blood Glucose",
