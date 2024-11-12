@@ -63,8 +63,7 @@ theme_averages_plot <- function() {
 
 ui <- lcarsPage(force_uppercase = TRUE,
 
-# css
-  tagList(
+   tagList(
     tags$style(HTML("
       @import url(https://fonts.googleapis.com/css2?family=Antonio:wght@300&display=swap);
 
@@ -110,7 +109,9 @@ ui <- lcarsPage(force_uppercase = TRUE,
         border-top: 0px;
       }
     "))
-  ),
+   ),
+
+
 
 # title
   lcarsHeader("[INSERT TITLE HERE]",
@@ -185,7 +186,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
         lcarsRect(
             color = "#000000",
             height = 52,
-            text = h3("UPLOAD DATA TO DISPLAY GRAPH:"),
+            text = h3("UPLOAD DATA TO DISPLAY GRAPHS:"),
             text_size = 17,
             text_color = "#FFFFDD"
         )
@@ -237,26 +238,38 @@ ui <- lcarsPage(force_uppercase = TRUE,
     left_inputs = inputColumn(
       lcarsToggle(
         inputId = "mavg",
-        label = h6("Show Moving Average:"),
-        value = TRUE,
-        false_color = "#EE4444"
+        label = h6("Moving Average:"),
+        value = FALSE,
+        true_color = "#5577ee",
+        false_color = "#EE4444",
+        background_color = "#FFDD99"
       ),
-      lcarsRect(
-        height = 10,
-        width = 150,
-        color = "#CC6699",
-        round = c("both")
-      ),
+
       lcarsToggle(
         inputId = "davg",
-        label = h6("Show Daily Averages:"),
+        label = h6("Daily Averages:"),
         value = TRUE,
-        false_color = "#EE4444"
+        true_color = "#5577ee",
+        false_color = "#EE4444",
+        background_color = "#FFDD99"
+      ),
+      lcarsToggle(
+        inputId = "smavg",
+        label = h6("Smoothed Averages:"),
+        value = TRUE,
+        true_color = "#5577ee",
+        false_color = "#EE4444",
+        background_color = "#FFDD99"
       ),
       lcarsRect(
-        height = 90,
-        color = "#CC6699",
-        width = 150
+        height = 0,
+        width = 150,
+        color = "#000"
+      ),
+      lcarsRect(
+        height = 45,
+        width = 150,
+        color = "#CC6699"
       ),
       lcarsRadioToggle("date_lines", h6("X-Axis Scale:"),
         c("Months" = "m", "Weeks" = "w", "Days" = "d"),
@@ -368,12 +381,13 @@ ui <- lcarsPage(force_uppercase = TRUE,
   ),
 
 
-# shoutout to the creator of the lcars package
-  div(br(), h6("The aesthetics of this app are based on the LCARS computer interface
-         from Star Trek because I am an unrepentant nerd. Credit for the theme
-         and custom widgets goes to Matthew Leonawicz!
-         https://github.com/leonawicz/lcars/tree/master?tab=readme-ov-file"))
+# The aesthetics of this app are based on the LCARS computer interface
+# from Star Trek because I am an unrepentant nerd. Credit for the theme
+# and custom widgets goes to Matthew Leonawicz
+# https://github.com/leonawicz/lcars/tree/master?tab=readme-ov-file
+
 )
+
 
 
 
@@ -381,6 +395,9 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 server <- function(input, output, session) {
 
+
+
+# creates info buttons
   output$help_averages <- renderUI ({
     lcarsButton(
       "help_averages",
@@ -411,6 +428,7 @@ server <- function(input, output, session) {
     )
   })
 
+# content for info modals
   observeEvent(input$help_averages, {
       showModal(
         modalDialog(
@@ -472,7 +490,7 @@ server <- function(input, output, session) {
   })
 
 
-  # instructions for downloading/uploading raw data (beneath the bracket)
+# instructions for downloading/uploading raw data (beneath the bracket)
   output$instructions <- renderUI ({
     if (input$instructions == TRUE){
       div(
@@ -504,21 +522,21 @@ server <- function(input, output, session) {
 # tidying the uploaded data
   all_data <- eventReactive(input$upload, {
 
-#   reads the uploaded files to create a list of data frames with the same names
-#   as the original files + ".xlsx"
+# reads the uploaded files to create a list of data frames with the same names
+# as the original files + ".xlsx"
     files <- setNames(
       lapply(input$upload$datapath, read_excel),
       sapply(input$upload$name, basename))
 
-#   interpolates values outside of the CGM's range (over 400 and under 40)
+# interpolates values outside of the CGM's range (over 400 and under 40)
     files <- lapply(files, highs)
     files <- lapply(files, lows)
 
-#   tidies up the data
+# tidies up the data
     files <- lapply(files, reshape)
 
-#   merges the uploaded files, dependent on the number of inputs
-#   there's probably a better way to do this but that's not a high priority rn
+# merges the uploaded files, dependent on the number of inputs
+# there's probably a better way to do this but that's not a high priority rn
     if (length(files) == 1) {
       all_data <- files[[input$upload$name[[1]] ]]
     }
@@ -541,14 +559,19 @@ server <- function(input, output, session) {
   })
 
 
-# calculates the daily averages and adds a new column for the moving average
+# creates a new data frame that includes daily averages, moving averages, and
+# smoothed (splined) data points
   averages <- eventReactive(input$upload, {
     averages <- all_data()
 
     averages <- averages |>
       group_by(date) |>
       summarize(daily_avg = mean(value)) |>
-      mutate(ma_12 = rollmean(daily_avg, k = 12, fill = NA, align = "right"))
+      mutate(ma_13 = rollmean(daily_avg, k = 13, fill = NA, align = "right"))
+
+    splined_avgs <- lm(daily_avg ~ bs(date, df = 17), data = averages)
+
+    averages <- mutate(averages, smooth = fitted(splined_avgs))
   })
 
 
@@ -589,19 +612,19 @@ server <- function(input, output, session) {
   })
 
 
-# reactive values that control the graph's x-axis/range
+# reactive values that control the averages graph's x-axis/range
   xmin_averages <- reactiveVal()
   xmax_averages <- reactiveVal()
 
 # when date range is manually changed or automatically adjusted after data is uploaded,
-# range of the graph is determined by those inputs
+# range of the averages graph is determined by those inputs
   observeEvent(input$interval, {
     xmin_averages(input$interval[1])
     xmax_averages(input$interval[2])
   })
 
-# when the graph is brushed and double clicked, range of the graph is determined
-# by the minimum and maximum x values of the brushed area
+# when the graph is brushed and double clicked, range of the graph is changed
+# to fit the minimum and maximum x values of the brushed area
   observeEvent(input$click_averages, {
     brush <- input$brush_averages
       if(!is.null(brush)) {
@@ -615,7 +638,7 @@ server <- function(input, output, session) {
   })
 
 
-# reactive variables to change the scale and labels of the x-axis
+# reactive variables to change the scale and labels of the x-axis of the averages graph
   averages_breaks <- reactiveVal()
   averages_labels <- reactiveVal()
 
@@ -667,8 +690,8 @@ server <- function(input, output, session) {
       scale_y_continuous(limits = c(100, 320), breaks = seq(100,320,20)) +
       scale_color_manual(
         "Method",
-        values = c("#cc6699", "#cc99cc"),
-        labels = c("Moving Average", "Daily Average")
+        values = c("#99e","#cc6699", "#cc99cc"),
+        labels = c("Moving Average", "Smoothed Average", "Daily Average")
       ) + theme_lcars_light() +
       theme_averages_plot()
 
@@ -676,29 +699,61 @@ server <- function(input, output, session) {
 # now this bit tests which buttons have been toggled to determine which extra
 # conditions to add to the original empty plot
 
-#   both lines toggled on
-    if (input$mavg == TRUE & input$davg == TRUE){
+# all lines toggled on
+    if (input$mavg == TRUE & input$davg == TRUE & input$smavg == TRUE){
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92)
+        geom_line(aes(y = ma_13, color = "#99e"), linewidth = 0.87) +
+        geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
     }
-#   moving average on, daily averages off
-    if(input$mavg == TRUE & input$davg == FALSE){
+# moving average on, daily averages off, spline off
+    if(input$mavg == TRUE & input$davg == FALSE & input$smavg == FALSE){
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92)
+        geom_line(aes(y = ma_13, color = "#99e"), linewidth = 0.87) +
+        geom_line(aes(y = smooth, color = "#cc6699"), alpha = 0)
     }
-#   daily averages on, moving average off
-    if(input$davg == TRUE & input$mavg == FALSE){
+# moving average on, daily averages off, spline on
+    if(input$mavg == TRUE & input$davg == FALSE & input$smavg == TRUE){
+      averages_plot <- averages_plot +
+        geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
+        geom_line(aes(y = ma_13, color = "#99e"), linewidth = 0.87) +
+        geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
+    }
+# daily averages on, moving average off, spline off
+    if(input$davg == TRUE & input$mavg == FALSE & input$smavg == FALSE){
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_12, color = "#cc6699"), alpha = 0)
+        geom_line(aes(y = ma_13, color = "#99e"), alpha = 0) +
+        geom_line(aes(y = smooth, color = "#cc6699"), alpha = 0)
     }
-#   both lines off (empty plot)
+# INITIAL STATE: daily averages on, moving average off, spline on
+    if(input$davg == TRUE & input$mavg == FALSE & input$smavg == TRUE){
+      averages_plot <- averages_plot +
+        geom_line(aes(y = daily_avg, color = "#cc99cc")) +
+        geom_line(aes(y = ma_13, color = "#99e"), alpha = 0) +
+        geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
+    }
+# daily averages on, moving average on, spline on
+    if(input$davg == TRUE & input$mavg == TRUE & input$smavg == TRUE){
+      averages_plot <- averages_plot +
+        geom_line(aes(y = daily_avg, color = "#cc99cc")) +
+        geom_line(aes(y = ma_13, color = "#99e"), alpha = 0) +
+        geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
+    }
+# daily averages on, moving average on, spline off
+    if(input$davg == TRUE & input$mavg == TRUE & input$smavg == FALSE){
+      averages_plot <- averages_plot +
+        geom_line(aes(y = daily_avg, color = "#cc99cc")) +
+        geom_line(aes(y = ma_13, color = "#99e"), linewidth = 0.87) +
+        geom_line(aes(y = smooth, color = "#cc6699"), alpha = 0)
+    }
+# all lines off (empty plot)
     else {
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_12, color = "#cc6699"), alpha = 0)
+        geom_line(aes(y = ma_13, color = "#99e"), alpha = 0) +
+        geom_line(aes(y = smooth, color = "#cc6699"), alpha = 0)
     }
     averages_plot
   })
