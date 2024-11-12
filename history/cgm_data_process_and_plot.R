@@ -60,6 +60,18 @@ library(zoo)
     mutate(ma_12 = rollmean(daily_avg, k = 12, fill = NA, align = "right")) |>
     filter(!is.na(ma_12))
 
+# cubic spline?
+
+  m1 <- lm(daily_avg ~ bs(date, df = 12), data = daily_averages)
+  daily_averages_m1 <- mutate(daily_averages, cubic = fitted(m1))
+
+  spline_plot <- ggplot(daily_averages_m1, aes(date, daily_avg)) +
+    geom_line(aes(y = daily_avg), color = "#cc99cc", linewidth = 0.9) +
+    geom_line(aes(date, cubic), color = "#cc6699", linewidth = 0.9) +
+    theme_bw()
+
+  spline_plot
+
 
 
 # create variable date range for the graph
@@ -71,7 +83,7 @@ library(zoo)
 
 
 # graph time
-  averages_plot <- ggplot(daily_averages, aes(x = date)) +
+  averages_plot <- ggplot(daily_averages_m1, aes(x = date)) +
     annotate(
       "rect",
       xmin = as.Date(first_date), xmax = as.Date(last_date),
@@ -86,8 +98,9 @@ library(zoo)
       fill = "#ffcc66",
       alpha = 0.25
     ) +
-    geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-    geom_line(aes(y = ma_12, color = "#cc6699"), linewidth = 0.92) +
+    geom_line(aes(y = daily_avg), color = "#cc99cc") +
+    geom_line(aes(y = ma_12), color = "#cc6699") +
+    geom_line(aes(y = cubic), color = "#99e", linewidth = 0.92) +
     labs(
       title = "Average Daily Blood Glucose",
       subtitle = "11/4/23 to 10/15/24",
@@ -98,8 +111,8 @@ library(zoo)
     scale_y_continuous(limits = c(100, 320), breaks = seq(100,320,20)) +
     scale_color_manual(
       "Method",
-      values = c("#cc6699", "#cc99cc"),
-      labels = c("Moving Average", "Plain Daily Average")
+      values = c("#cc6699", "#cc99cc", "#99e"),
+      labels = c("Moving Average", "Plain Daily Average", "Spline")
       )
 
 
