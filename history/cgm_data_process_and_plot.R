@@ -100,7 +100,7 @@ library(zoo)
     ) +
     geom_line(aes(y = daily_avg), color = "#cc99cc") +
     geom_line(aes(y = ma_11), color = "#cc6699") +
-    geom_line(aes(y = cubic), color = "#99e", linewidth = 0.92) +
+    geom_smooth(aes(y = cubic), color = "#99e", linewidth = 0.92) +
     labs(
       title = "Average Daily Blood Glucose",
       subtitle = "11/4/23 to 10/15/24",
