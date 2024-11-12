@@ -267,7 +267,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
         color = "#000"
       ),
       lcarsRect(
-        height = 45,
+        height = 35,
         width = 150,
         color = "#CC6699"
       ),
@@ -706,18 +706,25 @@ server <- function(input, output, session) {
         geom_line(aes(y = ma_13, color = "#99e"), linewidth = 0.87) +
         geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
     }
-# moving average on, daily averages off, spline off
+# daily averages off, moving average on, spline off
     if(input$mavg == TRUE & input$davg == FALSE & input$smavg == FALSE){
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
         geom_line(aes(y = ma_13, color = "#99e"), linewidth = 0.87) +
         geom_line(aes(y = smooth, color = "#cc6699"), alpha = 0)
     }
-# moving average on, daily averages off, spline on
+# daily averages off, moving average on, spline on
     if(input$mavg == TRUE & input$davg == FALSE & input$smavg == TRUE){
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
         geom_line(aes(y = ma_13, color = "#99e"), linewidth = 0.87) +
+        geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
+    }
+# daily averages off, moving averages off, spline on
+    if(input$mavg == FALSE & input$davg == FALSE & input$smavg == TRUE){
+      averages_plot <- averages_plot +
+        geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
+        geom_line(aes(y = ma_13, color = "#99e"), alpha = 0) +
         geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
     }
 # daily averages on, moving average off, spline off
