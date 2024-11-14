@@ -9,6 +9,7 @@ library(png)
 library(readxl)
 library(zoo)
 library(stats)
+library(splines)
 # a lotttt of packages
 
 # custom theme for the averages graph
@@ -255,7 +256,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
       ),
       lcarsToggle(
         inputId = "smavg",
-        label = h6("Smoothed Averages:"),
+        label = h6("Smoothed Average:"),
         value = TRUE,
         true_color = "#5577ee",
         false_color = "#EE4444",
@@ -440,6 +441,9 @@ server <- function(input, output, session) {
             p("- use the 'X-Axis Scale' buttons to adjust labels on the x-axis", style = "color: #000000;"),
             p("- the date range above this plot changes the range of the graph
               and the slider adjusts the blue shaded 'ideal range'", style = "color: #000000;"),
+            p("- the smoothed average is better for analyzing long term
+              patterns than the moving average, which works best for mid-length
+              time-spans", style = "color: #000000;"),
             hr(),
             p("Disclaimer: the overall average is a comprehensive estimate based
               on all available CGM data but it is not necessarily an accurate
@@ -691,7 +695,7 @@ server <- function(input, output, session) {
       scale_color_manual(
         "Method",
         values = c("#99e","#cc6699", "#cc99cc"),
-        labels = c("Moving Average", "Smoothed Average", "Daily Average")
+        labels = c("Moving Average", "Smoothed Average", "Daily Averages")
       ) + theme_lcars_light() +
       theme_averages_plot()
 
@@ -820,7 +824,7 @@ server <- function(input, output, session) {
   {violin_data <- all_data()
 
    violin_data <- violin_data |>
-     filter(date >= mini() & date <= maxi()) |>
+     filter(between(date,input$range[1], input$range[2])) |>
      group_by(date) |>
      mutate(value = as.numeric(value), date = as.factor(date))
   })
