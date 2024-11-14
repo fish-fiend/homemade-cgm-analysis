@@ -9,8 +9,10 @@
   I also uploaded some [demo videos](https://www.youtube.com/@gf0ur) to youtube for more information about using the app and interpreting results. They will almost definitely be slightly outdated though.
 <br>
 
-### ISSUE WITH THE VIOLIN PLOT IS BACK FOR VENGEANCE
-  The date range input for the violin plot is malfunctioning again for apparently no reason. I'm investigating. 
+### <s> ISSUE WITH THE VIOLIN PLOT IS BACK FOR VENGEANCE
+  The date range input for the violin plot is malfunctioning again for apparently no reason. I'm investigating. </s>
+  
+  FIXED! If this happens again I might cry!
 
 ### UPCOMING FEATURES
   - faster upload processing
