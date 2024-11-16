@@ -146,7 +146,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
     ),
 
     column_inputs = inputColumn(
-      lcarsRect(color = "#99CCFF", height = 32, width = 150)
+      lcarsRect(color = "#99CCFF", width = 150, round = c("right")),
     ),
 
 # custom inputs for the plot (date range and ideal average range)
@@ -239,15 +239,6 @@ lcarsBracket(
 # creates the buttons on the left side which control the lines on the plot
     left_inputs = inputColumn(
       lcarsToggle(
-        inputId = "mavg",
-        label = h6("Moving Average:"),
-        value = FALSE,
-        true_color = "#5577ee",
-        false_color = "#EE4444",
-        background_color = "#FFDD99"
-      ),
-
-      lcarsToggle(
         inputId = "davg",
         label = h6("Daily Averages:"),
         value = TRUE,
@@ -269,7 +260,7 @@ lcarsBracket(
         color = "#000"
       ),
       lcarsRect(
-        height = 36,
+        height = 63,
         width = 150,
         color = "#CC6699"
       ),
@@ -442,9 +433,8 @@ server <- function(input, output, session) {
             p("- use the 'X-Axis Scale' buttons to adjust labels on the x-axis", style = "color: #000000;"),
             p("- the date range above this plot changes the range of the graph
               and the slider adjusts the blue shaded 'ideal range'", style = "color: #000000;"),
-            p("- the smoothed average is better for analyzing long term
-              patterns than the moving average, which works best for mid-length
-              time-spans", style = "color: #000000;"),
+            p("- the smoothed average works best for analyzing long term
+              trends", style = "color: #000000;"),
             hr(),
             p("Disclaimer: the overall average is a comprehensive estimate based
               on all available CGM data but it is not necessarily an accurate
@@ -569,8 +559,7 @@ server <- function(input, output, session) {
 
     averages <- averages |>
       group_by(date) |>
-      summarize(daily_avg = mean(value)) |>
-      mutate(ma_13 = rollmean(daily_avg, k = 13, fill = NA, align = "right"))
+      summarize(daily_avg = mean(value))
 
     splined_avgs <- lm(daily_avg ~ bs(date, df = 17), data = averages)
 
@@ -693,76 +682,38 @@ server <- function(input, output, session) {
       scale_y_continuous(limits = c(100, 320), breaks = seq(100,320,20)) +
       scale_color_manual(
         "Method",
-        values = c("#99e","#cc6699", "#cc99cc"),
-        labels = c("Moving Average", "Smoothed Average", "Daily Averages")
+        values = c("#cc6699", "#cc99cc"),
+        labels = c("Smoothed Average", "Daily Averages")
       ) + theme_lcars_light() +
       theme_averages_plot()
 
 
 # now this bit tests which buttons have been toggled to determine which extra
 # conditions to add to the original empty plot
+    # #99e
 
-# all lines toggled on
-    if (input$mavg == TRUE & input$davg == TRUE & input$smavg == TRUE){
+# daily averages on, spline on (DEFAULT)
+    if (input$davg == TRUE & input$smavg == TRUE){
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_13, color = "#99e"), linewidth = 0.87) +
         geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
     }
-# daily averages off, moving average on, spline off
-    if(input$mavg == TRUE & input$davg == FALSE & input$smavg == FALSE){
+# daily averages on, spline off
+    if(input$davg == TRUE & input$smavg == FALSE){
       averages_plot <- averages_plot +
-        geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_13, color = "#99e"), linewidth = 0.87) +
+        geom_line(aes(y = daily_avg, color = "#cc99cc")) +
         geom_line(aes(y = smooth, color = "#cc6699"), alpha = 0)
     }
-# daily averages off, moving average on, spline on
-    if(input$mavg == TRUE & input$davg == FALSE & input$smavg == TRUE){
+# daily averages off, spline on
+    if(input$davg == FALSE & input$smavg == TRUE){
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_13, color = "#99e"), linewidth = 0.87) +
         geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
-    }
-# daily averages off, moving averages off, spline on
-    if(input$mavg == FALSE & input$davg == FALSE & input$smavg == TRUE){
-      averages_plot <- averages_plot +
-        geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_13, color = "#99e"), alpha = 0) +
-        geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
-    }
-# daily averages on, moving average off, spline off
-    if(input$davg == TRUE & input$mavg == FALSE & input$smavg == FALSE){
-      averages_plot <- averages_plot +
-        geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_13, color = "#99e"), alpha = 0) +
-        geom_line(aes(y = smooth, color = "#cc6699"), alpha = 0)
-    }
-# INITIAL STATE: daily averages on, moving average off, spline on
-    if(input$davg == TRUE & input$mavg == FALSE & input$smavg == TRUE){
-      averages_plot <- averages_plot +
-        geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_13, color = "#99e"), alpha = 0) +
-        geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
-    }
-# daily averages on, moving average on, spline on
-    if(input$davg == TRUE & input$mavg == TRUE & input$smavg == TRUE){
-      averages_plot <- averages_plot +
-        geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_13, color = "#99e"), alpha = 0) +
-        geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
-    }
-# daily averages on, moving average on, spline off
-    if(input$davg == TRUE & input$mavg == TRUE & input$smavg == FALSE){
-      averages_plot <- averages_plot +
-        geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = ma_13, color = "#99e"), linewidth = 0.87) +
-        geom_line(aes(y = smooth, color = "#cc6699"), alpha = 0)
     }
 # all lines off (empty plot)
     else {
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = ma_13, color = "#99e"), alpha = 0) +
         geom_line(aes(y = smooth, color = "#cc6699"), alpha = 0)
     }
     averages_plot
