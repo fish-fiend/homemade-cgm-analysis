@@ -95,6 +95,15 @@ ui <- lcarsPage(force_uppercase = TRUE,
         padding: 8px;
       }
 
+      #instruct {
+        margin: 14px;
+        border-width: 3px;
+        border-style: solid;
+        border-color: #FFCC66;
+        border-radius: 25px;
+        padding: 18px;
+      }
+
       .lcars-btn, .lcars-btn-filtered {
           height: 29px;
           width: 29px;
@@ -115,110 +124,102 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 
 # title
-  lcarsHeader("[INSERT TITLE HERE]",
+  lcarsHeader("[INSERT TITLE]",
               color = "#FF9900",
               title_right = FALSE),
 
 # header section — intro and customizable settings for the plot
   lcarsSweep(reverse = TRUE, color = "#99CCFF",
-    title = "Info", expand = c(0, 500),
+    title = "DISCLAIMERS", left_width = 0.36,
 
-# as of yet useless but aesthetically pleasing center divider
-    inputColumn(
-      lcarsRect(color = "#9999FF", height = 24, round = c("both")),
-      lcarsRect(color = "#cc99cc", height = 24, round = c("both")),
-      lcarsRect(color = "golden-tanoi", height = 60, width = 150),
-      lcarsRect(color = "#EE5555", height = 24, round = c("both"))
+
+    left_inputs = inputColumn(
+      div(
+        br(),
+        p("This page needs to be used at full width for the elements to align
+          properly."),
+        p("None of the graphics will render until data is uploaded."),
+        p("Press the 'i' icons at the bottom right of each section for
+          more information about interacting with the plots."),
+        style = "font-size: 16px; text-align: left;"
+      )
     ),
 
-# needed something to fill the space on the left side
-    left_inputs = inputColumn(
-      column(12,
-        div(
-          br(),
-          h4("This whole thing was supposed to be a single, unreactive graph with
-             no user interface. Obviously, things got a little out of hand. As I worked on
-             the original graph of daily averages over time, I realized that the
-             type of CGM analysis Dexcom offers its users is lacking in several
-             regards. There aren't any meaningful long-term trend visualizations
-             and the available graphical representations are often unintuitive
-             (not to mention boring). This is my attempt to fill those gaps in a
-             fun, novel way while learning how to code with R and Shiny."),
-          br(),
-          h5("Disclaimer: None of the graphics will render unless you upload data
-            first. Also, you have to use this page at full width or nothing aligns
-            properly. Press the 'i' icons at the bottom right of each section for
-            more information about how to interact with the plots."),
-        )
-      )
+    column_inputs = inputColumn(
+      lcarsRect(color = "#99CCFF", height = 32, width = 150)
     ),
 
 # custom inputs for the plot (date range and ideal average range)
     right_inputs = inputColumn(
-      lcarsPill(
-        title = "GRAPH SETTINGS",
-        height = 30,
-        color = "#CCCC55"
-      ),
-      div(br()),
-      dateRangeInput(
-        "interval", h4("Date Range"),
-        start = first_date,
-        end = last_date,
-        min = first_date,
-        max = last_date
-      ),
-      div(br()),
-      sliderInput(
-        "rect", h4("'Ideal' Daily Average Upper Limit"),
-        min = 110, max = 180,
-        value = c(165),
-        step = 5
-      )
+          lcarsPill(
+            title = "DAILY AVERAGE GRAPH SETTINGS",
+            height = 30,
+            color = "#CCCC55"
+          ),
+          div(br()),
+          fluidRow(
+            column(1, lcarsRect(color = "#000000")),
+            column(5,
+              dateRangeInput(
+                  "interval", h4("Date Range"),
+                  start = first_date,
+                  end = last_date,
+                  min = first_date,
+                  max = last_date,
+                  width = 250
+              )
+            ),
+            column(5,
+              sliderInput(
+                  "rect", h4("Ideal Average Range (Upper Limit)"),
+                  min = 110, max = 180,
+                  value = c(165),
+                  step = 5,
+                  width = 250
+              )
+            )
+          )
     )
   ),
-
 
 # bracket for uploading data
-  lcarsBracket(
-    color = "#FF7700",
-    fluidRow(
-      column(5,
-        lcarsRect(
-            color = "#000000",
-            height = 52,
-            text = h3("UPLOAD DATA TO DISPLAY GRAPHS:"),
-            text_size = 17,
-            text_color = "#FFFFDD"
-        )
-      ),
-      column(6,
-        fileInput(
-            "upload", "",
-            buttonLabel = "Import",
-            placeholder = "see directions below",
-            multiple = TRUE,
-            accept = ".xlsx",
-            width = 250
-        )
-      )
+lcarsBracket(
+  color = "#FF7700",
+  fluidRow(
+    column(6,
+           lcarsRect(
+             color = "#000000",
+             height = 52,
+             text = h3("UPLOAD DATA TO DISPLAY GRAPHS:"),
+             text_size = 17,
+             text_color = "#FFFFDD"
+           )
+    ),
+    column(6,
+           fileInput(
+             "upload", "",
+             buttonLabel = "Import",
+             placeholder = "see directions below",
+             multiple = TRUE,
+             accept = ".xlsx",
+             width = 250
+           )
     )
-  ),
+  )
+),
 
-
-# toggleable instructions below bracket
+# toggleable directions for downloading/uploading data
   fluidRow(
     column(3,
         lcarsCheckbox(
           "instructions", p("Instructions for Downloading and Uploading Data"),
           width = 400,
           value = FALSE
-        )
+          )
     ),
-    column(8,
-        htmlOutput("instructions")
-    )
+    column(12, htmlOutput("instructions"))
   ),
+
 
 
 
@@ -268,7 +269,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
         color = "#000"
       ),
       lcarsRect(
-        height = 35,
+        height = 36,
         width = 150,
         color = "#CC6699"
       ),
@@ -497,22 +498,20 @@ server <- function(input, output, session) {
 # instructions for downloading/uploading raw data (beneath the bracket)
   output$instructions <- renderUI ({
     if (input$instructions == TRUE){
-      div(
-        br(),
-        h4("HOW TO DOWNLOAD YOUR RAW CGM DATA IN THE CORRECT FORMAT:"),
-        p("Step 1: Log into Dexcom Clarity (at https://clarity.dexcom.com/). On the
-          far right side of the Overview page, just above the 'Sensor Usage' widget,
-          is an icon that looks like a spreadsheet with an arrow pointing right."),
-        p("Step 2: Click that icon, select a date range, then press export. The
-          data will automatically download in Numbers. 90 days is the automatic
-           date range limit so if you would like to analyze a longer timespan,
-           you can download multiple 90 day datasets (up to 4) and upload them all
-           simultaneously to this app."),
-        p("Step 3: Open it in numbers then go to File > Export To > Excel."),
+      div(id = "instruct",
+        h4("HOW TO DOWNLOAD RAW DEXCOM CGM DATA:"),
+        p("Step 1: Log in to Dexcom Clarity. On the far right side of the 'Overview'
+          page, just above the 'Sensor Usage' widget, is an icon that looks like
+          a spreadsheet with an arrow pointing right."),
+        p("Step 2: Click that icon, select a date range, then press export. Dexcom
+          only allows downloads of up to 90 days worth of data at a time, so if you
+          would like to analyze a longer timespan, repeat this step to download
+          multiple 90 day datasets."),
+        p("Step 3:  The file will automatically open with Numbers. Go to File >
+          Export To > Excel to convert it to the correct format."),
         p("Step 4: Name the file whatever you want, then come back here and hit
-          import! Hold down command while clicking on files to select
-          multiple files at once."),
-        br()
+          import! Hold down command to select multiple files at once (4 is the maximum)."),
+        style = "font-size: 16px;"
       )
     }
   })
