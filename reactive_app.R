@@ -68,21 +68,27 @@ ui <- lcarsPage(force_uppercase = TRUE,
     tags$style(HTML("
       @import url(https://fonts.googleapis.com/css2?family=Antonio:wght@300&display=swap);
 
+      div, h1, h2, h3, h4, h5, h6, p,
+      .lcars-hdr-title,
+      .lcars-box-title,
+      .lcars-box-subtitle,
+      .lcars-element-addition,
+       label,
+      .lcars-btn,
+      .lcars-btn-filtered,
+      .lcars-checkbox label{
+        font-family: Antonio;
+      }
+
       h4, h5, p {
         color: #FFCC66;
-        font-family: Antonio;
       }
       h6 {
         color: #FFCC66;
-        font-family: Antonio;
         font-size: 15px;
       }
       h3 {
         color: #FF7700;
-        font-family: Antonio;
-      }
-      div {
-        font-family: Antonio;
       }
 
       #violinLabel {
@@ -117,6 +123,10 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
       .modal-footer {
         border-top: 0px;
+      }
+
+      .irs {
+        font-family: Antonio;
       }
     "))
    ),
@@ -171,8 +181,8 @@ ui <- lcarsPage(force_uppercase = TRUE,
             ),
             column(5,
               sliderInput(
-                  "rect", h4("Ideal Average Range (Upper Limit)"),
-                  min = 110, max = 180,
+                  "rect", h4("Target Daily Average Range"),
+                  min = 90, max = 180,
                   value = c(165),
                   step = 5,
                   width = 250
@@ -248,7 +258,7 @@ lcarsBracket(
       ),
       lcarsToggle(
         inputId = "smavg",
-        label = h6("Smoothed Average:"),
+        label = h6("Smooth Average:"),
         value = TRUE,
         true_color = "#5577ee",
         false_color = "#EE4444",
@@ -264,7 +274,7 @@ lcarsBracket(
         width = 150,
         color = "#CC6699"
       ),
-      lcarsRadioToggle("date_lines", h6("X-Axis Scale:"),
+      lcarsRadioToggle("date_lines", h6("X-Axis Lines/Labels:"),
         c("Months" = "m", "Weeks" = "w", "Days" = "d"),
         label_color = "#CCCC55",
         width = 150
@@ -433,8 +443,6 @@ server <- function(input, output, session) {
             p("- use the 'X-Axis Scale' buttons to adjust labels on the x-axis", style = "color: #000000;"),
             p("- the date range above this plot changes the range of the graph
               and the slider adjusts the blue shaded 'ideal range'", style = "color: #000000;"),
-            p("- the smoothed average works best for analyzing long term
-              trends", style = "color: #000000;"),
             hr(),
             p("Disclaimer: the overall average is a comprehensive estimate based
               on all available CGM data but it is not necessarily an accurate
@@ -552,8 +560,7 @@ server <- function(input, output, session) {
   })
 
 
-# creates a new data frame that includes daily averages, moving averages, and
-# smoothed (splined) data points
+# creates a new data frame that includes daily averages and smoothed data
   averages <- eventReactive(input$upload, {
     averages <- all_data()
 
@@ -561,9 +568,9 @@ server <- function(input, output, session) {
       group_by(date) |>
       summarize(daily_avg = mean(value))
 
-    splined_avgs <- lm(daily_avg ~ bs(date, df = 17), data = averages)
+    smoother <- hp2(averages, lambda = 1000)
 
-    averages <- mutate(averages, smooth = fitted(splined_avgs))
+    averages <- mutate(averages, smoother = smoother$daily_avg)
   })
 
 
@@ -679,11 +686,11 @@ server <- function(input, output, session) {
       ) +
       scale_x_date(limits = c(xmin_averages(), xmax_averages()),
                               date_breaks = averages_breaks(), date_labels = averages_labels()) +
-      scale_y_continuous(limits = c(100, 320), breaks = seq(100,320,20)) +
+      scale_y_continuous(limits = c(100, 320), breaks = seq(100, 320, 20)) +
       scale_color_manual(
         "Method",
         values = c("#cc6699", "#cc99cc"),
-        labels = c("Smoothed Average", "Daily Averages")
+        labels = c("Smooth Average", "Daily Averages")
       ) + theme_lcars_light() +
       theme_averages_plot()
 
@@ -696,25 +703,25 @@ server <- function(input, output, session) {
     if (input$davg == TRUE & input$smavg == TRUE){
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
+        geom_line(aes(y = smoother, color = "#cc6699"), linewidth = 0.92)
     }
 # daily averages on, spline off
     if(input$davg == TRUE & input$smavg == FALSE){
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc")) +
-        geom_line(aes(y = smooth, color = "#cc6699"), alpha = 0)
+        geom_line(aes(y = smoother, color = "#cc6699"), alpha = 0)
     }
 # daily averages off, spline on
     if(input$davg == FALSE & input$smavg == TRUE){
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = smooth, color = "#cc6699"), linewidth = 0.92)
+        geom_line(aes(y = smoother, color = "#cc6699"), linewidth = 0.92)
     }
 # all lines off (empty plot)
     else {
       averages_plot <- averages_plot +
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
-        geom_line(aes(y = smooth, color = "#cc6699"), alpha = 0)
+        geom_line(aes(y = smoother, color = "#cc6699"), alpha = 0)
     }
     averages_plot
   })
