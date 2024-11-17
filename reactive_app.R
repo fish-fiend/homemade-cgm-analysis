@@ -64,30 +64,32 @@ theme_averages_plot <- function() {
 
 ui <- lcarsPage(force_uppercase = TRUE,
 
+# ideally css would be imported but currently when i try to do so it doesn't
+# overwrite the existing css in the way that i need it to
    tagList(
     tags$style(HTML("
       @import url(https://fonts.googleapis.com/css2?family=Antonio:wght@300&display=swap);
 
-      div, h1, h2, h3, h4, h5, h6, p,
-      body,
+      div, h1, h2, h3, h4,
+      h5, h6, p, body, label,
       .lcars-hdr-title,
       .lcars-box-title,
       .lcars-box-subtitle,
       .lcars-element-addition,
-       label,
       .lcars-btn,
       .lcars-btn-filtered,
-      .lcars-checkbox label{
+      .lcars-checkbox {
         font-family: Antonio;
       }
 
-      h4, h5, p {
+      h1, h2, h4, h5, h6, p {
         color: #FFCC66;
       }
+
       h6 {
-        color: #FFCC66;
         font-size: 15px;
       }
+
       h3 {
         color: #FF7700;
       }
@@ -99,7 +101,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
         border-color: #FFCC66;
         border-radius: 25px;
         width: 210px;
-        padding: 8px;
+        padding: 10px;
       }
 
       #instruct {
@@ -128,13 +130,50 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
       .irs {
         font-family: Antonio;
-        color: #FFCC66;
+        color: #FFffcd;
       }
 
+      .irs--shiny .irs-min, .irs--shiny .irs-max {
+        font-size: 12px;
+      }
+      .irs--shiny .irs-from, .irs--shiny .irs-to {
+        color: #ffffcd
+      }
       .irs--shiny .irs-handle {
-        top: 18px;
+        top: 23px;
         width: 20px;
-        height: 20px;
+        height: 14px;
+        border: 1px solid #ffffff;
+        background-color: #99ccff;
+        box-shadow: 1px 1px 3px rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        z-index: 2;
+        }
+
+      .irs--shiny .irs-bar {
+        top: 23px;
+        height: 14px;
+        border-top: 1px solid #ffffff;
+        border-bottom: 1px solid #ffffff;
+        border-left: 1px solid #ffffff;
+        background: #428bca;
+        cursor: s-resize;
+        z-index: 2;
+      }
+
+
+      .irs--shiny .irs-line {
+        top: 23px;
+        height: 14px;
+        background: #000000;
+        background-color: #000000;
+        border: 1px solid #cccccc;
+        border-radius: 8px;
+        overflow: visible;
+      }
+
+      .irs--shiny .irs-handle.state_hover, .irs--shiny .irs-handle:hover {
+        background: #428bca;
       }
     "))
    ),
@@ -191,8 +230,9 @@ ui <- lcarsPage(force_uppercase = TRUE,
               sliderInput(
                   "rect", h4("Target Daily Average Range"),
                   min = 90, max = 180,
-                  value = c(165),
+                  value = c(100,165),
                   step = 5,
+                  ticks = FALSE,
                   width = 250
               )
             )
@@ -293,7 +333,7 @@ lcarsBracket(
 # the actual plot itself
     fluidRow(
       column(12,
-          plotOutput("averages_plot", height = 450,
+          plotOutput("averages_plot", height = 500,
             dblclick = "click_averages",
             brush = brushOpts(
               "brush_averages",
@@ -322,7 +362,7 @@ lcarsBracket(
         width = 140
       ),
       lcarsRect(
-        height = 50,
+        height = 100,
         color = "golden-tanoi"
       )
     )
@@ -450,7 +490,7 @@ server <- function(input, output, session) {
               click to zoom in——double click again to reset", style = "color: #000000;"),
             p("- use the 'X-Axis Scale' buttons to adjust labels on the x-axis", style = "color: #000000;"),
             p("- the date range above this plot changes the range of the graph
-              and the slider adjusts the blue shaded 'ideal range'", style = "color: #000000;"),
+              and the slider adjusts the shaded areas", style = "color: #000000;"),
             hr(),
             p("Disclaimer: the overall average is a comprehensive estimate based
               on all available CGM data but it is not necessarily an accurate
@@ -675,14 +715,21 @@ server <- function(input, output, session) {
       annotate(
         "rect",
         xmin = xmin_averages(), xmax = xmax_averages(),
-        ymin = 100, ymax = input$rect,
-        fill = "#99CCFF",
+        ymin = 90, ymax = input$rect[1],
+        fill = "#99DDFF",
         alpha = 0.25
       ) +
       annotate(
         "rect",
         xmin = xmin_averages(), xmax = xmax_averages(),
-        ymin = input$rect, ymax = 320,
+        ymin = input$rect[1], ymax = input$rect[2],
+        fill = "#AACC55",
+        alpha = 0.25
+      ) +
+      annotate(
+        "rect",
+        xmin = xmin_averages(), xmax = xmax_averages(),
+        ymin = input$rect[2], ymax = 320,
         fill = "#ffcc66",
         alpha = 0.25
       ) +
@@ -693,7 +740,7 @@ server <- function(input, output, session) {
       ) +
       scale_x_date(limits = c(xmin_averages(), xmax_averages()),
                               date_breaks = averages_breaks(), date_labels = averages_labels()) +
-      scale_y_continuous(limits = c(100, 320), breaks = seq(100, 320, 20)) +
+      scale_y_continuous(limits = c(90, 320), breaks = seq(90, 320, 20)) +
       scale_color_manual(
         "Method",
         values = c("#cc6699", "#cc99cc"),
@@ -945,8 +992,8 @@ server <- function(input, output, session) {
 
     bar_averages <- bar_averages |>
       mutate(class = "time", in_range = daily_avg) |>
-      mutate(in_range = replace(in_range, in_range > input$rect, ">" )) |>
-      mutate(in_range = replace(in_range, in_range <= input$rect & in_range != ">", "<"))
+      mutate(in_range = replace(in_range, in_range > input$rect[2], ">" )) |>
+      mutate(in_range = replace(in_range, in_range <= input$rect[2] & in_range != ">", "<"))
 
     range_percent <- ggplot(bar_averages, aes(x = class, y = daily_avg, fill = in_range), alpha = 0.98) +
       geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
@@ -954,8 +1001,8 @@ server <- function(input, output, session) {
         values = c("#ffcc66", "#99CCFF" ),
         breaks = c(">", "<"),
         labels = c(
-          paste("Daily Avg. >", input$rect, "mg/dL"),
-          paste("Daily Avg. <", input$rect, "mg/dL"))
+          paste("Daily Avg. >", input$rect[2], "mg/dL"),
+          paste("Daily Avg. <", input$rect[2], "mg/dL"))
       ) +
       labs(
         caption = "Days in Range",
