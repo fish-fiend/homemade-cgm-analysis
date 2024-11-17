@@ -9,7 +9,7 @@ library(png)
 library(readxl)
 library(zoo)
 library(stats)
-library(splines)
+library(hpfilter)
 # a lotttt of packages
 
 # custom theme for the averages graph
@@ -69,6 +69,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
       @import url(https://fonts.googleapis.com/css2?family=Antonio:wght@300&display=swap);
 
       div, h1, h2, h3, h4, h5, h6, p,
+      body,
       .lcars-hdr-title,
       .lcars-box-title,
       .lcars-box-subtitle,
@@ -127,6 +128,13 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
       .irs {
         font-family: Antonio;
+        color: #FFCC66;
+      }
+
+      .irs--shiny .irs-handle {
+        top: 18px;
+        width: 20px;
+        height: 20px;
       }
     "))
    ),
@@ -563,7 +571,6 @@ server <- function(input, output, session) {
 # creates a new data frame that includes daily averages and smoothed data
   averages <- eventReactive(input$upload, {
     averages <- all_data()
-
     averages <- averages |>
       group_by(date) |>
       summarize(daily_avg = mean(value))
