@@ -228,7 +228,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
             ),
             column(5,
               sliderInput(
-                  "rect", h4("Target Daily Average Range"),
+                  "rect", h4("Target Average BG Range"),
                   min = 90, max = 180,
                   value = c(100,165),
                   step = 5,
