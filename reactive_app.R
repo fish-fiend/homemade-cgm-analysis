@@ -65,7 +65,8 @@ theme_averages_plot <- function() {
 ui <- lcarsPage(force_uppercase = TRUE,
 
 # ideally css would be imported but currently when i try to do so it doesn't
-# overwrite the existing css in the way that i need it to
+# overwrite the existing css properly.
+# something to deal with eventually
    tagList(
     tags$style(HTML("
       @import url(https://fonts.googleapis.com/css2?family=Antonio:wght@300&display=swap);
@@ -716,14 +717,14 @@ server <- function(input, output, session) {
         "rect",
         xmin = xmin_averages(), xmax = xmax_averages(),
         ymin = 90, ymax = input$rect[1],
-        fill = "#99DDFF",
+        fill = "#ffcc66",
         alpha = 0.25
       ) +
       annotate(
         "rect",
         xmin = xmin_averages(), xmax = xmax_averages(),
         ymin = input$rect[1], ymax = input$rect[2],
-        fill = "#AACC55",
+        fill = "#99DDFF",
         alpha = 0.25
       ) +
       annotate(
