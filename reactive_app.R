@@ -10,20 +10,26 @@ library(readxl)
 library(zoo)
 library(stats)
 library(hpfilter)
+library(showtext)
 # a lotttt of packages
 
-# custom theme for the averages graph
-theme_averages_plot <- function() {
+font_add_google("Antonio", "Antonio")
+showtext_auto()
 
-  theme(plot.title = element_text(size = 22),
-        axis.title = element_text(size = 15),
-        legend.title = element_text(size = 15),
-        legend.text = element_text(size = 12),
+# custom themes
+theme_averages_plot <- function() {
+  theme(plot.title = element_text(size = 30),
+        axis.title = element_text(size = 20),
+        legend.title = element_text(size = 20),
+        legend.text = element_text(size = 16),
+        axis.text = element_text(size = 16),
         plot.margin = margin(20, 20, 20, 20),
         axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
-        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))
+        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        text = element_text(family = "Antonio")
   )
 }
+
 
 # A1C to eAG conversion chart
   conversion_chart <- data.frame(
@@ -663,8 +669,8 @@ server <- function(input, output, session) {
   xmin_averages <- reactiveVal()
   xmax_averages <- reactiveVal()
 
-# when date range is manually changed or automatically adjusted after data is uploaded,
-# range of the averages graph is determined by those inputs
+# when date range is manually changed, the range of the averages graph is
+# determined by those inputs
   observeEvent(input$interval, {
     xmin_averages(input$interval[1])
     xmax_averages(input$interval[2])
@@ -836,7 +842,7 @@ server <- function(input, output, session) {
   {violin_data <- all_data()
 
    violin_data <- violin_data |>
-     filter(between(date,input$range[1], input$range[2])) |>
+     filter(between(date, input$range[1], input$range[2])) |>
      group_by(date) |>
      mutate(value = as.numeric(value), date = as.factor(date))
   })
@@ -862,13 +868,14 @@ server <- function(input, output, session) {
       ) +
       theme_lcars_dark() +
       theme(
-        plot.title = element_text(size = 23, margin = margin(b = 25)),
-        axis.title = element_text(size = 15),
+        plot.title = element_text(size = 30, margin = margin(b = 23)),
+        axis.title = element_text(size = 20),
         axis.title.x = element_text(margin = margin(t = 15)),
         axis.title.y = element_text(margin = margin(r = 15)),
-        axis.text = element_text(size = 12),
+        axis.text = element_text(size = 16),
         plot.margin = margin(0, 10, 0, 15),
-        legend.position = "none"
+        legend.position = "none",
+        text = element_text(family = "Antonio")
       )
     glycemic_var
   })
@@ -977,10 +984,11 @@ server <- function(input, output, session) {
       theme_lcars_dark() +
       theme(
         legend.title = element_blank(),
-        plot.caption = element_text(hjust = 0.5, size = 18, margin = margin(t = 15)),
-        legend.text = element_text(size = 14),
+        plot.caption = element_text(hjust = 0.5, size = 25, margin = margin(t = 15)),
+        legend.text = element_text(size = 19),
         axis.text.x = element_blank(),
-        plot.margin = margin(32, 28, 28, 28)
+        plot.margin = margin(32, 28, 28, 28),
+        text = element_text(family = "Antonio")
       )
     range_time
   })
@@ -1013,10 +1021,11 @@ server <- function(input, output, session) {
       theme_lcars_dark() +
       theme(
         legend.title = element_blank(),
-        plot.caption = element_text(hjust = 0.5, size = 18, margin = margin(t = 15)),
-        legend.text = element_text(size = 14),
+        plot.caption = element_text(hjust = 0.5, size = 25, margin = margin(t = 15)),
+        legend.text = element_text(size = 19),
         axis.text.x = element_blank(),
         plot.margin = margin(28, 28, 28, 28),
+        text = element_text(family = "Antonio")
       )
   range_percent
   })
