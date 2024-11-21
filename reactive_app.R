@@ -340,7 +340,7 @@ lcarsBracket(
 # the actual plot itself
     fluidRow(
       column(12,
-          plotOutput("averages_plot", height = 500,
+          plotOutput("averages_plot", height = "500px",
             dblclick = "click_averages",
             brush = brushOpts(
               "brush_averages",
@@ -797,8 +797,8 @@ server <- function(input, output, session) {
 # assigns initial values to select the most recent week of available data
 # executes upon upload of files
     observeEvent(input$upload, {
-      maxi(last_date())
-      mini(last_date() - 7)
+      maxi(last_date() - 1)
+      mini(last_date() - 8)
     })
 
 # assigns minimum and maximum dates based on user selection
