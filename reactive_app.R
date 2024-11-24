@@ -758,7 +758,6 @@ server <- function(input, output, session) {
 
 # now this bit tests which buttons have been toggled to determine which extra
 # conditions to add to the original empty plot
-    # #99e
 
 # daily averages on, spline on (DEFAULT)
     if (input$davg == TRUE & input$smavg == TRUE){
@@ -784,8 +783,9 @@ server <- function(input, output, session) {
         geom_line(aes(y = daily_avg, color = "#cc99cc"), alpha = 0) +
         geom_line(aes(y = smoother, color = "#cc6699"), alpha = 0)
     }
-    averages_plot
-  })
+    averages_plot},
+    execOnResize = TRUE
+  )
 
 
 # glycemic variation violin plot time
@@ -872,13 +872,14 @@ server <- function(input, output, session) {
         axis.title = element_text(size = 20),
         axis.title.x = element_text(margin = margin(t = 15)),
         axis.title.y = element_text(margin = margin(r = 15)),
-        axis.text = element_text(size = 16),
+        axis.text = element_text(size = 17),
         plot.margin = margin(0, 10, 0, 15),
         legend.position = "none",
         text = element_text(family = "Antonio")
       )
-    glycemic_var
-  })
+    glycemic_var},
+    execOnResize = TRUE
+  )
 
 # next part creates a reactive readout beside the plot that displays the mean
 # and standard deviation of whichever day the user clicks on
@@ -984,14 +985,15 @@ server <- function(input, output, session) {
       theme_lcars_dark() +
       theme(
         legend.title = element_blank(),
-        plot.caption = element_text(hjust = 0.5, size = 25, margin = margin(t = 15)),
-        legend.text = element_text(size = 19),
+        plot.caption = element_text(hjust = 0.5, size = 28, margin = margin(t = 15)),
+        legend.text = element_text(size = 17),
         axis.text.x = element_blank(),
-        plot.margin = margin(32, 28, 28, 28),
+        plot.margin = margin(32, 50, 28, 28),
         text = element_text(family = "Antonio")
       )
-    range_time
-  })
+    range_time},
+    execOnResize = TRUE
+  )
 
 
 # stacked bar chart showing percentage of days in range
@@ -1021,14 +1023,15 @@ server <- function(input, output, session) {
       theme_lcars_dark() +
       theme(
         legend.title = element_blank(),
-        plot.caption = element_text(hjust = 0.5, size = 25, margin = margin(t = 15)),
-        legend.text = element_text(size = 19),
+        plot.caption = element_text(hjust = 0.5, size = 28, margin = margin(t = 15)),
+        legend.text = element_text(size = 17),
         axis.text.x = element_blank(),
-        plot.margin = margin(28, 28, 28, 28),
+        plot.margin = margin(28, 35, 28, 28),
         text = element_text(family = "Antonio")
       )
-  range_percent
-  })
+    range_percent},
+    execOnResize = TRUE
+  )
 }
 
 # "#3366CD"
