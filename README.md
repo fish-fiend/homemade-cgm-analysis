@@ -1,5 +1,5 @@
 ### TESTING
-  Here's a link to the [website](https://gfournier.shinyapps.io/cgm-analysis-longterm/). 
+  Here's a link to the [website](https://gyfour.shinyapps.io/cgm-analysis-longterm/). 
   Please close the tab when you're done with it because if the site gets too much runtime the web host will try to make me pay them money.
   
   And you need to upload data for the graphics to render so here's some of my own >> 
