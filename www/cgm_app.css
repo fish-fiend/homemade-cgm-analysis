@@ -1,0 +1,104 @@
+      @import url(https://fonts.googleapis.com/css2?family=Antonio:wght@300&display=swap);
+
+      div, h1, h2, h3, h4, 
+      h5, h6, p, body, label, 
+      .lcars-hdr-title,
+      .lcars-box-title,
+      .lcars-box-subtitle,
+      .lcars-element-addition,
+      .lcars-btn,
+      .lcars-btn-filtered,
+      .lcars-checkbox {
+        font-family: Antonio;
+      }
+
+      h1, h2, h4, h5, h6, p {
+        color: #FFCC66;
+      }
+
+      h6 {
+        font-size: 15px;
+      }
+
+      h3 {
+        color: #FF7700;
+      }
+
+      #violinLabel {
+        text-align: left;
+        border-width: 2px;
+        border-style: solid;
+        border-color: #FFCC66;
+        border-radius: 25px;
+        width: 210px;
+        padding: 8px;
+      }
+
+      #instruct {
+        margin: 14px;
+        border-width: 3px;
+        border-style: solid;
+        border-color: #FFCC66;
+        border-radius: 25px;
+        padding: 18px;
+      }
+
+      .lcars-btn, .lcars-btn-filtered {
+          height: 29px;
+          width: 29px;
+          padding-left: 6px;
+          padding-top: 0px;
+          text-align: center;
+          border: 2px solid #FFFFCD;
+          border-radius: 25px;
+          font-size: 14px;
+      }
+
+      .modal-footer {
+        border-top: 0px;
+      }
+
+      .irs {
+        font-family: Antonio;
+        color: #FFCC66;
+      }
+
+      .irs--shiny .irs-handle {
+        top: 23px;
+        width: 20px;
+        height: 14px;
+        border-top: 1px solid #ffffff;
+        border-bottom: 1px solid #ffffff;
+        border-right: 1px solid #ffffff;
+        background-color: #428bca;
+        box-shadow: 1px 1px 3px rgba(255, 255, 255, 0.3);
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+        z-index: 2;
+        }
+
+      .irs--shiny .irs-bar {
+        top: 23px;
+        height: 14px;
+        border-top: 1px solid #ffffff;
+        border-bottom: 1px solid #ffffff;
+        border-left: 1px solid #ffffff;
+        background: #428bca;
+        cursor: s-resize;
+        z-index: 2;
+      }
+
+
+      .irs--shiny .irs-line {
+        top: 23px;
+        height: 14px;
+        background: #000000;
+        background-color: #000000;
+        border: 1px solid #cccccc;
+        border-radius: 8px;
+        overflow: visible;
+      }
+
+      .irs--shiny .irs-handle.state_hover, .irs--shiny .irs-handle:hover {
+        background: #428bca;
+      }
