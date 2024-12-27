@@ -200,7 +200,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
     left_inputs = inputColumn(
       div(
         br(),
-        p("This page needs to be used at full width for the elements to align
+        p("This page should be used at full width so that the elements align
           properly."),
         p("None of the graphics will render until data is uploaded."),
         p("Press the 'i' icons at the bottom right of each section for
