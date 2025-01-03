@@ -270,7 +270,14 @@ lcarsBracket(
              width = 250
            )
     )
-  )
+  ),
+  fluidRow(
+    column(6, lcarsRect(color = "#000000")),
+    column(6,
+           lcarsCheckbox("trial", p("Use Trial Data Instead"),
+                         value = FALSE,
+                         width = 250))
+    )
 ),
 
 # toggleable directions for downloading/uploading data
@@ -575,14 +582,45 @@ server <- function(input, output, session) {
   })
 
 
-# tidying the uploaded data
-  all_data <- eventReactive(input$upload, {
+# automatically deselects the checkbox when a new file is uploaded
+  observeEvent(input$upload, {
+    updateCheckboxInput(session, "trial", value = FALSE)
+  })
 
-# reads the uploaded files to create a list of data frames with the same names
-# as the original files + ".xlsx"
-    files <- setNames(
+# creates a list of my stored "trial" data so people can see the graphs and
+# interact with them without having to upload their own data
+  trial_files <- eventReactive(input$trial, {
+    trial_files <- c("www/clarity_01.21_04.19.xlsx", "www/clarity_04.20_07.17.xlsx")
+    trial_files <- lapply(trial_files, read_excel)
+  })
+# creates a list of files uploaded by the user
+  unique_files <- eventReactive(input$upload, {
+    unique_files <- setNames(
       lapply(input$upload$datapath, read_excel),
       sapply(input$upload$name, basename))
+  })
+# decides which list to use based on the inputs
+  files <- eventReactive({
+    input$upload
+    input$trial
+    }, {
+      if (input$trial == TRUE) {
+        files <- trial_files()
+      }
+      else {
+        files <- unique_files()
+      }
+      files <- files
+    })
+
+
+# tidying the uploaded data
+  all_data <- eventReactive({
+    input$upload
+    input$trial
+    }, {
+
+    files <- files()
 
 # interpolates values outside of the CGM's range (over 400 and under 40)
     files <- lapply(files, highs)
@@ -594,29 +632,33 @@ server <- function(input, output, session) {
 # merges the uploaded files, dependent on the number of inputs
 # there's probably a better way to do this but that's not a high priority rn
     if (length(files) == 1) {
-      all_data <- files[[input$upload$name[[1]] ]]
+      all_data <- files[[1]]
     }
     if (length(files) == 2) {
-      all_data <- files[[input$upload$name[[1]] ]] |>
-        full_join(files[[input$upload$name[[2]] ]], join_by(date, value))
+      all_data <- files[[1]] |>
+        full_join(files[[2]], join_by(date, value))
     }
     if (length(files) == 3) {
-      all_data <- files[[input$upload$name[[1]] ]] |>
-        full_join(files[[input$upload$name[[2]] ]], join_by(date, value)) |>
-        full_join(files[[input$upload$name[[3]] ]], join_by(date, value))
+      all_data <- files[[1]] |>
+        full_join(files[[2]], join_by(date, value)) |>
+        full_join(files[[3]], join_by(date, value))
     }
-    if (length(files) == 4) {
-      all_data <- files[[input$upload$name[[1]] ]] |>
-        full_join(files[[input$upload$name[[2]] ]], join_by(date, value)) |>
-        full_join(files[[input$upload$name[[3]] ]], join_by(date, value)) |>
-        full_join(files[[input$upload$name[[4]] ]], join_by(date, value))
+    if (length(files) >= 4) {
+      all_data <- files[[1]] |>
+        full_join(files[[2]], join_by(date, value)) |>
+        full_join(files[[3]], join_by(date, value)) |>
+        full_join(files[[4]], join_by(date, value))
     }
     all_data <- all_data
   })
 
 
+
 # creates a new data frame that includes daily averages and smoothed data
-  averages <- eventReactive(input$upload, {
+  averages <- eventReactive({
+    input$upload
+    input$trial
+    }, {
     averages <- all_data()
     averages <- averages |>
       group_by(date) |>
@@ -629,31 +671,43 @@ server <- function(input, output, session) {
 
 
 # estimates overall average bg value
-  overall_average <- eventReactive(input$upload, {
+  overall_average <- eventReactive({
+    input$upload
+    input$trial
+  }, {
     overall_average <- round(mean(as.vector(averages()$daily_avg)))
   })
 
 # overall average title at the top of the first box
   output$overall_average <- renderText ({
-    req(input$upload)
+    req(isTruthy(input$upload) | isTruthy(input$trial))
     paste("OVERALL AVERAGE =", overall_average(), "mg/dL")
   })
 
 
 # finds earliest date of observations
-  first_date <- eventReactive(input$upload, {
+  first_date <- eventReactive({
+    input$upload
+    input$trial
+  }, {
     averages()$date[1]
   })
 
 # finds most recent date of observations
-  last_date <- eventReactive(input$upload, {
+  last_date <- eventReactive({
+    input$upload
+    input$trial
+  }, {
     averages_inverse <- arrange(averages(), desc(date))
     last_date <- averages_inverse$date[1]
   })
 
 # updates the initial start/end dates of the date range input in the top right based
 # on the full range of uploaded data
-  observeEvent(input$upload, {
+  observeEvent({
+    input$upload
+    input$trial
+  }, {
     updateDateRangeInput(
       session,
       "interval",
@@ -714,7 +768,7 @@ server <- function(input, output, session) {
 # the plot thickens!
 # (time for the daily averages graph)
   output$averages_plot <- renderPlot({
-     req(input$upload)
+     req(isTruthy(input$upload) | isTruthy(input$trial))
 
 #   this first part creates a geom-less plot to function as a base for the conditionals
 #   so that there's less copy + pasting
@@ -796,7 +850,10 @@ server <- function(input, output, session) {
 
 # assigns initial values to select the most recent week of available data
 # executes upon upload of files
-    observeEvent(input$upload, {
+    observeEvent({
+      input$upload
+      input$trial
+    }, {
       maxi(last_date() - 1)
       mini(last_date() - 8)
     })
@@ -822,7 +879,10 @@ server <- function(input, output, session) {
 
 # changes the date range starter values to display those initial reactive values
 # until new ones are input
-  observeEvent(input$upload, {
+  observeEvent({
+    input$upload
+    input$trial
+  }, {
     updateDateRangeInput(
       session,
       "range",
@@ -838,6 +898,7 @@ server <- function(input, output, session) {
   violin_data <- eventReactive({
                     input$range
                     input$upload
+                    input$trial
                  },
   {violin_data <- all_data()
 
@@ -850,7 +911,7 @@ server <- function(input, output, session) {
 
 # violin plot
   output$glycemic_var <- renderPlot({
-    req(input$upload)
+    req(isTruthy(input$upload) | isTruthy(input$trial))
 
     glycemic_var <- ggplot(violin_data(), aes(x = date, y = value, fill = date)) +
       geom_violin() +
