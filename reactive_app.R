@@ -188,8 +188,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 
 # title
-  lcarsHeader("[INSERT TITLE]",
-              color = "#FF9900",
+  lcarsHeader(color = "#FF9900",
               title_right = FALSE),
 
 # header section — intro and customizable settings for the plot
@@ -202,15 +201,17 @@ ui <- lcarsPage(force_uppercase = TRUE,
         br(),
         p("This page should be used at full width so that the elements align
           properly."),
-        p("None of the graphics will render until data is uploaded."),
+        p('The graphics will not render without uploading Dexcom data files or
+          clicking the "show sample data instead" checkbox under the data upload field.'),
         p("Press the 'i' icons at the bottom right of each section for
-          more information about interacting with the plots."),
+          more information about the plots."),
         style = "font-size: 16px; text-align: left;"
       )
     ),
 
     column_inputs = inputColumn(
-      lcarsRect(color = "#99CCFF", width = 150, round = c("right")),
+      lcarsRect(color = "#5577ee", width = 150, height = 28, round = c("both")),
+      lcarsRect(color = "#AA99FF", width = 150, height = 28, round = c("both"))
     ),
 
 # custom inputs for the plot (date range and ideal average range)
@@ -282,7 +283,7 @@ lcarsBracket(
 
 # toggleable directions for downloading/uploading data
   fluidRow(
-    column(3,
+    column(4,
         lcarsCheckbox(
           "instructions", p("Instructions for Downloading and Uploading Data"),
           width = 400,
@@ -440,19 +441,16 @@ lcarsBracket(
         color = "#AA99FF",
         round = c("both")
       ),
-      numericInput("low_lim", h4("'Low' Limit"), value = 80, width = 150),
+      numericInput("low_lim", h4("'Low' Limit"), value = 70, width = 150),
       lcarsRect(height = 67, color = "#7788FF"),
     )
-  ),
-
-
-# The aesthetics of this app are based on the LCARS computer interface
-# from Star Trek because I am an unrepentant nerd. Credit for the theme
-# and custom widgets goes to Matthew Leonawicz
-# https://github.com/leonawicz/lcars/tree/master?tab=readme-ov-file
-
+  )
 )
 
+# The aesthetics of this app are based on the LCARS computer interface
+# from Star Trek because I am a massive and unrepentant nerd. Credit for most of
+# the styles and custom widgets goes to Matthew Leonawicz!
+# https://github.com/leonawicz/lcars/tree/master?tab=readme-ov-file
 
 
 
@@ -502,14 +500,14 @@ server <- function(input, output, session) {
             p("- each point represents the average of all CGM readings from a given day", style = "color: #000000;"),
             p("- drag the mouse to highlight an area on the graph, then double
               click to zoom in——double click again to reset", style = "color: #000000;"),
-            p("- use the 'X-Axis Scale' buttons to adjust labels on the x-axis", style = "color: #000000;"),
+            p("- use the 'X-Axis Lines/Labels' buttons to adjust labels on the x-axis", style = "color: #000000;"),
             p("- the date range above this plot changes the range of the graph
               and the slider adjusts the shaded areas", style = "color: #000000;"),
             hr(),
-            p("Disclaimer: the overall average is a comprehensive estimate based
-              on all available CGM data but it is not necessarily an accurate
+            p("Disclaimer: the overall average is an estimate based
+              on all available CGM data and is not necessarily an accurate
               predictor of A1C %. The recommended use of the conversion chart is
-              as a reference for determining individual goals.", style = "color: #000000; font-size: 12px;")
+              as a reference for determining goals.", style = "color: #000000; font-size: 12px;")
           ),
           footer = modalButton("OKAY"),
           size = c("m")
@@ -522,9 +520,9 @@ server <- function(input, output, session) {
       modalDialog(
         title = h4("INFO — DAILY GLYCEMIC VARIATION",  style = "color: #000000;"),
         div(
-          p("- each object is a sort of density plot——the width represents the
-            number of observations at a certain blood sugar level", style = "color: #000000;"),
-          p("- click on a shape to reveal the average glucose value and standard
+          p("- each object is a density plot——the width represents the
+            relative number of observations at/around a certain blood sugar level", style = "color: #000000;"),
+          p("- click on a blob to reveal the average glucose value and standard
             deviation of data from that day", style = "color: #000000;"),
           hr(),
           p("Disclaimer: recommended date range is around 10 days or less.", style = "color: #000000; font-size: 12px;")
@@ -582,10 +580,6 @@ server <- function(input, output, session) {
   })
 
 
-# automatically deselects the checkbox when a new file is uploaded
-  observeEvent(input$upload, {
-    updateCheckboxInput(session, "trial", value = FALSE)
-  })
 
 # creates a list of my stored "trial" data so people can see the graphs and
 # interact with them without having to upload their own data
@@ -593,13 +587,13 @@ server <- function(input, output, session) {
     trial_files <- c("www/clarity_01.21_04.19.xlsx", "www/clarity_04.20_07.17.xlsx")
     trial_files <- lapply(trial_files, read_excel)
   })
-# creates a list of files uploaded by the user
+# creates a list of the files uploaded by the user
   unique_files <- eventReactive(input$upload, {
     unique_files <- setNames(
       lapply(input$upload$datapath, read_excel),
       sapply(input$upload$name, basename))
   })
-# decides which list to use based on the inputs
+# decides which list to use based on the given input
   files <- eventReactive({
     input$upload
     input$trial
@@ -612,6 +606,10 @@ server <- function(input, output, session) {
       }
       files <- files
     })
+# automatically deselects the "trial data" checkbox when new files are uploaded
+  observeEvent(input$upload, {
+    updateCheckboxInput(session, "trial", value = FALSE)
+  })
 
 
 # tidying the uploaded data
@@ -629,8 +627,8 @@ server <- function(input, output, session) {
 # tidies up the data
     files <- lapply(files, reshape)
 
-# merges the uploaded files, dependent on the number of inputs
-# there's probably a better way to do this but that's not a high priority rn
+# merges the uploaded files, max of 4 at a time
+# there might be a better way to do this but that's not a high priority rn
     if (length(files) == 1) {
       all_data <- files[[1]]
     }
@@ -659,6 +657,7 @@ server <- function(input, output, session) {
     input$upload
     input$trial
     }, {
+
     averages <- all_data()
     averages <- averages |>
       group_by(date) |>
@@ -702,8 +701,8 @@ server <- function(input, output, session) {
     last_date <- averages_inverse$date[1]
   })
 
-# updates the initial start/end dates of the date range input in the top right based
-# on the full range of uploaded data
+# updates the initial start/end dates of the date range input in the top right
+#  based on the range of the data
   observeEvent({
     input$upload
     input$trial
@@ -723,7 +722,7 @@ server <- function(input, output, session) {
   xmin_averages <- reactiveVal()
   xmax_averages <- reactiveVal()
 
-# when date range is manually changed, the range of the averages graph is
+# when the date range is manually changed, the range of the averages graph is
 # determined by those inputs
   observeEvent(input$interval, {
     xmin_averages(input$interval[1])
@@ -765,13 +764,14 @@ server <- function(input, output, session) {
   })
 
 
-# the plot thickens!
-# (time for the daily averages graph)
+# daily averages plot time
+
+
   output$averages_plot <- renderPlot({
      req(isTruthy(input$upload) | isTruthy(input$trial))
 
-#   this first part creates a geom-less plot to function as a base for the conditionals
-#   so that there's less copy + pasting
+# this first part creates a geom-less plot to function as a base for the conditionals
+# eliminates redundancy!!
     averages_plot <- ggplot(averages(), aes(x = date)) +
       annotate(
         "rect",
@@ -800,7 +800,9 @@ server <- function(input, output, session) {
         y = "Value (mg/dL)"
       ) +
       scale_x_date(limits = c(xmin_averages(), xmax_averages()),
-                              date_breaks = averages_breaks(), date_labels = averages_labels()) +
+                   date_breaks = averages_breaks(),
+                   date_labels = averages_labels()
+                   ) +
       scale_y_continuous(limits = c(90, 320), breaks = seq(90, 320, 20)) +
       scale_color_manual(
         "Method",
@@ -811,7 +813,7 @@ server <- function(input, output, session) {
 
 
 # now this bit tests which buttons have been toggled to determine which extra
-# conditions to add to the original empty plot
+# conditions to add to the empty base plot
 
 # daily averages on, spline on (DEFAULT)
     if (input$davg == TRUE & input$smavg == TRUE){
@@ -842,14 +844,15 @@ server <- function(input, output, session) {
   )
 
 
-# glycemic variation violin plot time
+# glycemic variation violin plot time!
 
-# creates reactive values that will be used to determine the range of the x-axis
+
+# creates reactive values that will be used to determine the range of the plot
   maxi <- reactiveVal()
   mini <- reactiveVal()
 
 # assigns initial values to select the most recent week of available data
-# executes upon upload of files
+# executes upon upload of files/selection of "trial" button
     observeEvent({
       input$upload
       input$trial
@@ -858,7 +861,7 @@ server <- function(input, output, session) {
       mini(last_date() - 8)
     })
 
-# assigns minimum and maximum dates based on user selection
+# assigns minimum and maximum dates based on user input
 # prompts a warning modal if date range exceeds 30 days
 # executes upon date range input
     observeEvent(input$range, {
@@ -892,9 +895,10 @@ server <- function(input, output, session) {
   })
 
 
-# aforementioned data handling
+# data wrangling
 # selects observations between the range inputs from the overall data
 # executes when either new files are uploaded OR the date range is manually adjusted
+# OR the trial button is selected
   violin_data <- eventReactive({
                     input$range
                     input$upload
@@ -953,7 +957,6 @@ server <- function(input, output, session) {
 
 # assign value depending on selected day
   observeEvent(input$violin_click, {
-
     violin_data <- violin_data()
     averages <- averages()
     selection <- nearPoints(
@@ -1000,8 +1003,8 @@ server <- function(input, output, session) {
     }
     else {
       label(div(id = "violinLabel",
-              p("click the graph to display daily mean and standard deviation")
-              )
+                p("click a shape on the graph to display daily mean and standard deviation")
+            )
       )
     }
   })
@@ -1095,6 +1098,5 @@ server <- function(input, output, session) {
   )
 }
 
-# "#3366CD"
 
 shinyApp(ui, server)
