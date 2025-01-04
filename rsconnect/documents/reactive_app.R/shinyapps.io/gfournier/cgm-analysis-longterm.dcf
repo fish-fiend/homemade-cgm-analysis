@@ -5,9 +5,9 @@ account: gfournier
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 13129120
-bundleId: 9409361
-url: https://gyfour.shinyapps.io/cgm-analysis-longterm/
+bundleId: 9602913
+url: https://gen-4.shinyapps.io/cgm-analysis-longterm/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: .RData|README.md|tidepool_new.xlsx|trial-cgm-data/clarity_01.21_04.19.xlsx|trial-cgm-data/clarity_04.20_07.17.xlsx|trial-cgm-data/clarity_07.18_10.15.xlsx|trial-cgm-data/clarity_10.16_11.12.xlsx|trial-cgm-data/clarity_10.23_01.20.xlsx|www/cgm_app.css|history
+ignoredFiles: .RData|pump_data_experiment/basal_rate_analysis.R|pump_data_experiment/tidepool_cgm.xlsx|pump_data_experiment/tidepool_new.xlsx|README.md|testing-cgm-data/c_07.07.24_10.04.24.xlsx|testing-cgm-data/c_10.05.24_01.02.25.xlsx|testing-cgm-data/clarity_07.18_10.15.xlsx|testing-cgm-data/clarity_10.16_11.12.xlsx|testing-cgm-data/clarity_10.23_01.20.xlsx|trial_data_button_testing.R|www/cgm_app.css|history
