@@ -40,7 +40,7 @@ theme_averages_plot <- function() {
     gt()
 
 
-# functions for reincorporating extreme readings (preventing NAs) by
+# functions for reincorporating extreme readings (NAs) by
 # replacing "High" or "Low" values with 400 and 40
   highs <- function(x) {
     mutate(x, ...8 = replace(...8, ...8 == "High", "400" ))
@@ -51,8 +51,7 @@ theme_averages_plot <- function() {
   }
 
 
-
-# function for removing irrelevant data
+# function for cleaning the data
   reshape <- function(file) {
     file[-(1:19),] |>
       mutate(date = as.Date(...2, '%Y-%m-%d'), value = as.numeric(...8)) |>
@@ -72,7 +71,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 # ideally css would be imported but currently when i try to do so it doesn't
 # overwrite the existing css properly.
-# something to deal with eventually
+# something to deal with eventually perchance
    tagList(
     tags$style(HTML("
       @import url(https://fonts.googleapis.com/css2?family=Antonio:wght@300&display=swap);
@@ -187,15 +186,14 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 
 
-# title
+# title bar
   lcarsHeader(color = "#FF9900",
               title_right = FALSE),
 
 # header section — intro and customizable settings for the plot
-  lcarsSweep(reverse = TRUE, color = "#99CCFF",
-    title = "DISCLAIMERS", left_width = 0.36,
+  lcarsSweep(reverse = TRUE, color = "#99CCFF",  left_width = 0.36,
 
-
+    title = "DISCLAIMERS",
     left_inputs = inputColumn(
       div(
         br(),
@@ -208,78 +206,75 @@ ui <- lcarsPage(force_uppercase = TRUE,
         style = "font-size: 16px; text-align: left;"
       )
     ),
-
     column_inputs = inputColumn(
       lcarsRect(color = "#5577ee", width = 150, height = 28, round = c("both")),
       lcarsRect(color = "#AA99FF", width = 150, height = 28, round = c("both"))
     ),
-
 # custom inputs for the plot (date range and ideal average range)
     right_inputs = inputColumn(
-          lcarsPill(
-            title = "DAILY AVERAGE GRAPH SETTINGS",
-            height = 30,
-            color = "#CCCC55"
-          ),
-          div(br()),
-          fluidRow(
-            column(1, lcarsRect(color = "#000000")),
-            column(5,
-              dateRangeInput(
-                  "interval", h4("Date Range"),
-                  start = first_date,
-                  end = last_date,
-                  min = first_date,
-                  max = last_date,
-                  width = 250
-              )
-            ),
-            column(5,
-              sliderInput(
-                  "rect", h4("Target Average BG Range"),
-                  min = 90, max = 180,
-                  value = c(100,165),
-                  step = 5,
-                  ticks = FALSE,
-                  width = 250
-              )
-            )
+      lcarsPill(
+        title = "DAILY AVERAGE GRAPH SETTINGS",
+        height = 30,
+        color = "#CCCC55"
+      ),
+      div(br()),
+      fluidRow(
+        column(1, lcarsRect(color = "#000000")),
+        column(5,
+          dateRangeInput(
+              "interval", h4("Date Range"),
+              start = first_date,
+              end = last_date,
+              min = first_date,
+              max = last_date,
+              width = 250
           )
+        ),
+        column(5,
+          sliderInput(
+              "rect", h4("Target Average BG Range"),
+              min = 90, max = 180,
+              value = c(100,165),
+              step = 5,
+              ticks = FALSE,
+              width = 250
+          )
+        )
+      )
     )
   ),
 
 # bracket for uploading data
-lcarsBracket(
-  color = "#FF7700",
-  fluidRow(
-    column(6,
-           lcarsRect(
-             color = "#000000",
-             height = 52,
-             text = h3("UPLOAD DATA TO DISPLAY GRAPHS:"),
-             text_size = 17,
-             text_color = "#FFFFDD"
-           )
+  lcarsBracket(color = "#FF7700",
+    fluidRow(
+      column(6,
+             lcarsRect(
+               color = "#000000",
+               height = 52,
+               text = h3("UPLOAD DATA TO DISPLAY GRAPHS:"),
+               text_size = 17,
+               text_color = "#FFFFDD"
+             )
+      ),
+      column(6,
+             fileInput(
+               "upload", "",
+               buttonLabel = "Import",
+               placeholder = "see directions below",
+               multiple = TRUE,
+               accept = ".xlsx",
+               width = 250
+             )
+      )
     ),
-    column(6,
-           fileInput(
-             "upload", "",
-             buttonLabel = "Import",
-             placeholder = "see directions below",
-             multiple = TRUE,
-             accept = ".xlsx",
-             width = 250
-           )
-    )
+    fluidRow(
+      column(6, lcarsRect(color = "#000000")),
+      column(6,
+             lcarsCheckbox("trial", p("Use Trial Data Instead"),
+                           value = FALSE,
+                           width = 250))
+      )
   ),
-  fluidRow(
-    column(6, lcarsRect(color = "#000000")),
-    column(6,
-           lcarsCheckbox("trial", p("Use Trial Data Instead"),
-                         value = FALSE,
-                         width = 250))
-    )
-),
 
 # toggleable directions for downloading/uploading data
   fluidRow(
@@ -295,21 +290,22 @@ lcarsBracket(
 
 
 
-
-# box for displaying the plot, toggles, overall average, and conversion chart
+# box for displaying the averages plot, overall average, and conversion chart
   lcarsBox(
     corners = c(1, 2, 3, 4),
     sides = c(1, 3, 4),
     color = c("#CC6699",  "#FF9900",  "#FFCC66",  "#cc99cc"),
     side_color = c( "#FF9900",  "#000000", "#FFCC66", "#CC6699"),
 
-# displays overall average at the top of the box
+# overall average at the top of the box
     title = textOutput("overall_average"),
     title_color = "atomic-tangerine",
 
+# info button in the bottom right
     subtitle = uiOutput("help_averages"),
 
-# creates the buttons on the left side which control the lines on the plot
+# creates the buttons on the left side which control the lines on the plot and
+# the labels on the x-axis
     left_inputs = inputColumn(
       lcarsToggle(
         inputId = "davg",
@@ -348,13 +344,13 @@ lcarsBracket(
 # the actual plot itself
     fluidRow(
       column(12,
-          plotOutput("averages_plot", height = "500px",
-            dblclick = "click_averages",
-            brush = brushOpts(
-              "brush_averages",
-              resetOnNew = TRUE
-            )
+        plotOutput("averages_plot", height = "500px",
+          dblclick = "click_averages",
+          brush = brushOpts(
+            "brush_averages",
+            resetOnNew = TRUE
           )
+        )
       )
     ),
 
@@ -383,15 +379,18 @@ lcarsBracket(
     )
   ),
 
+
 # box for the violin plot
   lcarsBox(
-    subtitle = uiOutput("help_violins"),
-
     corners = c(1, 2, 3, 4),
     color = c("#CCCC55", "#CCCC55", "#CCCC55", "#CCCC55"),
     sides = c(4),
     side_color = c("#000000", "#000000", "#000000", "#000000"),
 
+# info button in bottom right
+    subtitle = uiOutput("help_violins"),
+
+# the plot, the time range selector, and the dynamic display of daily mean and sd
     fluidRow(
       column(9,
         plotOutput("glycemic_var", height = 550, click = "violin_click")
@@ -408,17 +407,19 @@ lcarsBracket(
           lcarsRect(height = 15, color = "#000000"),
           htmlOutput("violin_label")
         )
-      ),
+      )
     )
   ),
 
+
 # box for the bar charts
   lcarsBox(
-    subtitle = uiOutput("help_bars"),
-
     corners = c(1, 2, 3, 4),
     color = c("#AA99FF", "#AA99FF", "#AA99FF", "#AA99FF"),
     sides = c(1, 2, 3, 4),
+
+# info button
+    subtitle = uiOutput("help_bars"),
 
 # bar charts displaying distribution of time in range vs out
     fluidRow(
@@ -427,7 +428,6 @@ lcarsBracket(
       column(5, plotOutput("range_percent", height = 450))
     ),
 
-# all style no substance
     right_inputs = inputColumn(
       lcarsRect(height = 200, color = "#7788FF"),
     ),
@@ -448,7 +448,7 @@ lcarsBracket(
 )
 
 # The aesthetics of this app are based on the LCARS computer interface
-# from Star Trek because I am a massive and unrepentant nerd. Credit for most of
+# from Star Trek because I am a massive and unrepentant nerd. Credit for
 # the styles and custom widgets goes to Matthew Leonawicz!
 # https://github.com/leonawicz/lcars/tree/master?tab=readme-ov-file
 
@@ -458,9 +458,7 @@ lcarsBracket(
 
 server <- function(input, output, session) {
 
-
-
-# creates info buttons
+# info buttons
   output$help_averages <- renderUI ({
     lcarsButton(
       "help_averages",
@@ -470,7 +468,6 @@ server <- function(input, output, session) {
       hover_color = "eggplant"
     )
   })
-
   output$help_violins <- renderUI ({
     lcarsButton(
       "help_violins",
@@ -480,7 +477,6 @@ server <- function(input, output, session) {
       hover_color = "eggplant"
     )
   })
-
   output$help_bars <- renderUI ({
     lcarsButton(
       "help_bars",
@@ -491,7 +487,7 @@ server <- function(input, output, session) {
     )
   })
 
-# content for info modals
+# content for info modals associated with the buttons
   observeEvent(input$help_averages, {
       showModal(
         modalDialog(
@@ -514,7 +510,6 @@ server <- function(input, output, session) {
         )
       )
   })
-
   observeEvent(input$help_violins, {
     showModal(
       modalDialog(
@@ -532,7 +527,6 @@ server <- function(input, output, session) {
       )
     )
   })
-
   observeEvent(input$help_bars, {
     showModal(
       modalDialog(
@@ -568,7 +562,7 @@ server <- function(input, output, session) {
         p("Step 3:  The file will automatically open with Numbers. Go to File >
           Export To > Excel to convert it to the correct format."),
         p("Step 4: Name the file whatever you want, then come back here and hit
-          import! Hold down command to select multiple files at once (4 is the maximum)."),
+          import! Hold down command to select multiple files at once."),
         style = "font-size: 16px;"
       )
     }
@@ -580,19 +574,22 @@ server <- function(input, output, session) {
   })
 
 
+# now the fun stuff
 
-# creates a list of my stored "trial" data so people can see the graphs and
+# this creates a list of my sample data so people can see the graphs and
 # interact with them without having to upload their own data
   trial_files <- eventReactive(input$trial, {
     trial_files <- c("www/clarity_01.21_04.19.xlsx", "www/clarity_04.20_07.17.xlsx")
     trial_files <- lapply(trial_files, read_excel)
   })
-# creates a list of the files uploaded by the user
+
+# creates a list of files uploaded by the user
   unique_files <- eventReactive(input$upload, {
     unique_files <- setNames(
       lapply(input$upload$datapath, read_excel),
       sapply(input$upload$name, basename))
   })
+
 # decides which list to use based on the given input
   files <- eventReactive({
     input$upload
@@ -606,13 +603,13 @@ server <- function(input, output, session) {
       }
       files <- files
     })
-# automatically deselects the "trial data" checkbox when new files are uploaded
+
+# the "trial data" checkbox is automatically deselected when new files are uploaded
   observeEvent(input$upload, {
     updateCheckboxInput(session, "trial", value = FALSE)
   })
 
-
-# tidying the uploaded data
+# data wrangling
   all_data <- eventReactive({
     input$upload
     input$trial
@@ -627,27 +624,9 @@ server <- function(input, output, session) {
 # tidies up the data
     files <- lapply(files, reshape)
 
-# merges the uploaded files, max of 4 at a time
-# there might be a better way to do this but that's not a high priority rn
-    if (length(files) == 1) {
-      all_data <- files[[1]]
-    }
-    if (length(files) == 2) {
-      all_data <- files[[1]] |>
-        full_join(files[[2]], join_by(date, value))
-    }
-    if (length(files) == 3) {
-      all_data <- files[[1]] |>
-        full_join(files[[2]], join_by(date, value)) |>
-        full_join(files[[3]], join_by(date, value))
-    }
-    if (length(files) >= 4) {
-      all_data <- files[[1]] |>
-        full_join(files[[2]], join_by(date, value)) |>
-        full_join(files[[3]], join_by(date, value)) |>
-        full_join(files[[4]], join_by(date, value))
-    }
-    all_data <- all_data
+# merges all the individual files
+    all_data <- files |>
+      reduce(full_join, by = join_by(date, value))
   })
 
 
