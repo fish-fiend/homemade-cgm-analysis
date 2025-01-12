@@ -4,8 +4,8 @@ username: gfournier
 account: gfournier
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
-appId: 13129120
-bundleId: 9602913
+appId: 13665893
+bundleId: 9608705
 url: https://gen-4.shinyapps.io/cgm-analysis-longterm/
 version: 1
 asMultiple: FALSE
