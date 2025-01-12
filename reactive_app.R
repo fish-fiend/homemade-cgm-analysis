@@ -16,7 +16,7 @@ library(showtext)
 font_add_google("Antonio", "Antonio")
 showtext_auto()
 
-# custom themes
+# custom theme
 theme_averages_plot <- function() {
   theme(plot.title = element_text(size = 30),
         axis.title = element_text(size = 20),
@@ -29,7 +29,6 @@ theme_averages_plot <- function() {
         text = element_text(family = "Antonio")
   )
 }
-
 
 # A1C to eAG conversion chart
   conversion_chart <- data.frame(
@@ -70,8 +69,7 @@ theme_averages_plot <- function() {
 ui <- lcarsPage(force_uppercase = TRUE,
 
 # ideally css would be imported but currently when i try to do so it doesn't
-# overwrite the existing css properly.
-# something to deal with eventually perchance
+# overwrite the existing css properly so...
    tagList(
     tags$style(HTML("
       @import url(https://fonts.googleapis.com/css2?family=Antonio:wght@300&display=swap);
@@ -200,9 +198,9 @@ ui <- lcarsPage(force_uppercase = TRUE,
         p("This page should be used at full width so that the elements align
           properly."),
         p('The graphics will not render without uploading Dexcom data files or
-          clicking the "show sample data instead" checkbox under the data upload field.'),
+          selecting the "use trial data instead" checkbox under the data upload field.'),
         p("Press the 'i' icons at the bottom right of each section for
-          more information about the plots."),
+          more information."),
         style = "font-size: 16px; text-align: left;"
       )
     ),
