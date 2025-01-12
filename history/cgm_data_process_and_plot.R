@@ -2,7 +2,7 @@ library(tidyverse)
 library(ggplot2)
 library(zoo)
 
-# earlier version for the code of the plot that the app is based around
+# earlier version for the code of the first averages plot 
 # outdated but interesting
 
 # conjunction junction whats ur function

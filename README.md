@@ -2,10 +2,6 @@
   Here's a link to the [website](https://gyfour.shinyapps.io/cgm-analysis-longterm/). 
   Please close the tab when you're done with it because if the site gets too much runtime the web host will try to make me pay them money.
   
-  And you need to upload data for the graphics to render so here's some of my own >> 
-  [clarity_1023_0120.xlsx](https://github.com/user-attachments/files/17535653/clarity_1023_0120.xlsx) ...
-  [clarity_0121_04_19.xlsx](https://github.com/user-attachments/files/17653057/clarity_0121_04_19.xlsx)
-  
   I also uploaded some [demo videos](https://www.youtube.com/@gf0ur) to youtube for more information about using the app and interpreting results. They will almost definitely be slightly outdated though.
   
 <br></br>
