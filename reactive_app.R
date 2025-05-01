@@ -42,11 +42,11 @@ theme_averages_plot <- function() {
 # functions for reincorporating extreme readings (NAs) by
 # replacing "High" or "Low" values with 400 and 40
   highs <- function(x) {
-    mutate(x, ...8 = replace(...8, ...8 == "High", "400" ))
+    mutate(x, ...8 = replace(...8, ...8 == "High", "400"))
   }
 
   lows <- function(x) {
-    mutate(x, ...8 = replace(...8, ...8 == "Low", "40" ))
+    mutate(x, ...8 = replace(...8, ...8 == "Low", "40"))
   }
 
 
@@ -200,7 +200,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
         p('The graphics will not render without uploading Dexcom data files or
           selecting the "use trial data instead" checkbox under the data upload field.'),
         p("Press the 'i' icons at the bottom right of each section for
-          more information."),
+          more information about the graphs."),
         style = "font-size: 16px; text-align: left;"
       )
     ),
@@ -778,9 +778,10 @@ server <- function(input, output, session) {
       ) +
       scale_x_date(limits = c(xmin_averages(), xmax_averages()),
                    date_breaks = averages_breaks(),
-                   date_labels = averages_labels()
-                   ) +
-      scale_y_continuous(limits = c(90, 320), breaks = seq(90, 320, 20)) +
+                   date_labels = averages_labels(),
+                   expand = c(0,0)
+      ) +
+      scale_y_continuous(limits = c(90, 320), breaks = seq(90, 320, 20), expand = c(0,0)) +
       scale_color_manual(
         "Method",
         values = c("#cc6699", "#cc99cc"),
