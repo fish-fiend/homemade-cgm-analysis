@@ -53,7 +53,7 @@ theme_averages_plot <- function() {
 # function for cleaning the data
   reshape <- function(file) {
     file[-(1:19),] |>
-      mutate(date = as.Date(...2, '%Y-%m-%d'), value = as.numeric(...8)) |>
+      mutate(date = ...2, value = as.numeric(...8)) |>
       select(date, value) |>
       filter(!is.na(value))
   }
@@ -179,82 +179,107 @@ ui <- lcarsPage(force_uppercase = TRUE,
       .irs--shiny .irs-handle.state_hover, .irs--shiny .irs-handle:hover {
         background: #428bca;
       }
+
+
+      h1 {
+        text-align: center;
+      }
+
+      li, a {
+        color: #ffffff;
+        font-size: 18px;
+      }
+
+      .nav-pills>li.active>a, .nav-pills>li.active>a:focus,
+      .nav-pills>li.active>a:hover, .nav-pills>li>a{
+        background-color: #CC6699;
+        border: 1px solid white;
+        border-radius: 10px;
+      }
+
+      .nav-pills>li.active>a, .nav-pills>li.active>a:focus, .nav-pills>li.active>a:hover{
+        color: #774466;
+        border: 1px solid #774466;
+        border-radius: 10px;
+      }
+
+      .nav>li>a {
+        margin-top: 5px;
+        margin-bottom: 5px;
+        border-radius: 10px;
+      }
+
+      .nav {
+        margin: auto;
+        width: 100%;
+        border-radius: 25px;
+        background-color: #CC6699;
+      }
+
+      .nav-pills {
+        padding-left: 16%;
+        padding-right: 15%;
+        margin-top: 5px;
+        margin-bottom: 5px;
+      }
+
+      .nav-item {
+        margin-right: 2%;
+        margin-left: 2%;
+        background-color: #CC6699;
+      }
+
+      hr {
+        border: none;
+        margin: 10px;
+        background-color: #a9a9a9;
+        height: 1px;
+      }
+
+      .callout-box {
+        border-top: 5px solid #FECC66;
+        border-bottom: 5px solid #FECC66;
+        border-left: 10px solid #FECC66;
+        border-right: 10px solid #FECC66;
+        border-radius: 25px;
+        padding: 10px;
+        margin-bottom: 10px;
+        margin-top: 10px;
+      }
     "))
    ),
 
 
 
-# title bar
-  lcarsHeader(color = "#FF9900",
-              title_right = FALSE),
+  tags$hr(),
+  titlePanel(h1("PRETEND THIS IS A TITLE")),
+  tags$hr(),
+  tags$hr(),
 
-# header section — intro and customizable settings for the plot
-  lcarsSweep(reverse = TRUE, color = "#99CCFF",  left_width = 0.36,
+  tags$br(),
 
-    title = "DISCLAIMERS",
-    left_inputs = inputColumn(
-      div(
-        br(),
-        p("This page should be used at full width so that the elements align
-          properly."),
-        p('The graphics will not render without uploading Dexcom data files or
-          selecting the "use trial data instead" checkbox under the data upload field.'),
-        p("Press the 'i' icons at the bottom right of each section for
-          more information about the graphs."),
-        style = "font-size: 16px; text-align: left;"
-      )
+  fluidRow(
+    column(3,
+        lcarsPill(title = "IMPORTANT NOTES"),
+        div(p("Press the 'i' icons at the bottom right of each section for
+          more information about the graph.", class = "callout-box")),
+        div(p("This is a fun, unique tool for investigating one's own blood
+              sugar trends and management, not a replacement for licensed medical
+              advice.", class = "callout-box"))
     ),
-    column_inputs = inputColumn(
-      lcarsRect(color = "#5577ee", width = 150, height = 28, round = c("both")),
-      lcarsRect(color = "#AA99FF", width = 150, height = 28, round = c("both"))
-    ),
-# custom inputs for the plot (date range and ideal average range)
-    right_inputs = inputColumn(
-      lcarsPill(
-        title = "DAILY AVERAGE GRAPH SETTINGS",
-        height = 30,
-        color = "#CCCC55"
-      ),
-      div(br()),
-      fluidRow(
-        column(1, lcarsRect(color = "#000000")),
-        column(5,
-          dateRangeInput(
-              "interval", h4("Date Range"),
-              start = first_date,
-              end = last_date,
-              min = first_date,
-              max = last_date,
-              width = 250
-          )
-        ),
-        column(5,
-          sliderInput(
-              "rect", h4("Target Average BG Range"),
-              min = 90, max = 180,
-              value = c(100,165),
-              step = 5,
-              ticks = FALSE,
-              width = 250
-          )
-        )
-      )
-    )
-  ),
-
-# bracket for uploading data
-  lcarsBracket(color = "#FF7700",
-    fluidRow(
-      column(6,
+    column(6,
+      lcarsBracket(color = "#FF7700",
+        fluidRow(
+          column(5,
              lcarsRect(
                color = "#000000",
                height = 52,
-               text = h3("UPLOAD DATA TO DISPLAY GRAPHS:"),
+               text = h3("UPLOAD DATA HERE:"),
                text_size = 17,
                text_color = "#FFFFDD"
              )
-      ),
-      column(6,
+          ),
+          column(7,
              fileInput(
                "upload", "",
                buttonLabel = "Import",
@@ -263,151 +288,192 @@ ui <- lcarsPage(force_uppercase = TRUE,
                accept = ".xlsx",
                width = 250
              )
-      )
-    ),
-    fluidRow(
-      column(6, lcarsRect(color = "#000000")),
-      column(6,
+          )
+        ),
+        fluidRow(
+          column(2, lcarsRect(color = "#000000", width = "150px")),
+          column(3,
              lcarsCheckbox("trial", p("Use Trial Data Instead"),
                            value = FALSE,
-                           width = 250))
+                           width = 250)
+          ),
+          column(6,
+            lcarsCheckbox(
+              "instructions", p("Show Directions for Uploading Data"),
+              width = 400,
+              value = FALSE
+            )
+          )
+        )
+      )
+    ),
+    column(3,
+             dateRangeInput(
+               "interval", h4("Date Range"),
+               start = first_date,
+               end = last_date,
+               min = first_date,
+               max = last_date,
+               width = 250
+             ),
+             sliderInput(
+               "rect", h4("Target Average BG Range"),
+               min = 90, max = 180,
+               value = c(100,165),
+               step = 5,
+               ticks = FALSE,
+               width = 250
+             )
       )
   ),
 
-# toggleable directions for downloading/uploading data
-  fluidRow(
-    column(4,
-        lcarsCheckbox(
-          "instructions", p("Instructions for Downloading and Uploading Data"),
-          width = 400,
-          value = FALSE
-          )
-    ),
-    column(12, htmlOutput("instructions"))
-  ),
+  tags$hr(),
 
+# strap in we've reached the messy part— the navbar and all that follows
+  navset_pill(
+
+# page for the graph of daily averages and a1c conversion chart
+    nav_panel("Averages",
+      tags$hr(),
+      tags$br(),
 
 
 # box for displaying the averages plot, overall average, and conversion chart
-  lcarsBox(
-    corners = c(1, 2, 3, 4),
-    sides = c(1, 3, 4),
-    color = c("#CC6699",  "#FF9900",  "#FFCC66",  "#cc99cc"),
-    side_color = c( "#FF9900",  "#000000", "#FFCC66", "#CC6699"),
+      lcarsBox(
+        corners = c(1, 2, 3, 4),
+        sides = c(1, 3, 4),
+        color = c("#CC6699",  "#FF9900",  "#FFCC66",  "#cc99cc"),
+        side_color = c( "#FF9900",  "#000000", "#FFCC66", "#CC6699"),
 
 # overall average at the top of the box
-    title = textOutput("overall_average"),
-    title_color = "atomic-tangerine",
+        title = textOutput("overall_average"),
+        title_color = "atomic-tangerine",
 
 # info button in the bottom right
-    subtitle = uiOutput("help_averages"),
+        subtitle = uiOutput("help_averages"),
 
-# creates the buttons on the left side which control the lines on the plot and
+# buttons on the left side which control the lines on the plot and
 # the labels on the x-axis
-    left_inputs = inputColumn(
-      lcarsToggle(
-        inputId = "davg",
-        label = h6("Daily Averages:"),
-        value = TRUE,
-        true_color = "#5577ee",
-        false_color = "#EE4444",
-        background_color = "#FFDD99"
-      ),
-      lcarsToggle(
-        inputId = "smavg",
-        label = h6("Smooth Average:"),
-        value = TRUE,
-        true_color = "#5577ee",
-        false_color = "#EE4444",
-        background_color = "#FFDD99"
-      ),
-      lcarsRect(
-        height = 0,
-        width = 150,
-        color = "#000"
-      ),
-      lcarsRect(
-        height = 63,
-        width = 150,
-        color = "#CC6699"
-      ),
-      lcarsRadioToggle("date_lines", h6("X-Axis Lines/Labels:"),
-        c("Months" = "m", "Weeks" = "w", "Days" = "d"),
-        label_color = "#CCCC55",
-        width = 150
-      )
-    ),
-
+        left_inputs = inputColumn(
+          lcarsToggle(
+            inputId = "davg",
+            label = h6("Daily Averages:"),
+            value = TRUE,
+            true_color = "#5577ee",
+            false_color = "#EE4444",
+            background_color = "#FFDD99"
+          ),
+          lcarsToggle(
+            inputId = "smavg",
+            label = h6("Smooth Average:"),
+            value = TRUE,
+            true_color = "#5577ee",
+            false_color = "#EE4444",
+            background_color = "#FFDD99"
+          ),
+          lcarsRect(
+            height = 0,
+            width = 150,
+            color = "#000"
+          ),
+          lcarsRect(
+            height = 63,
+            width = 150,
+            color = "#CC6699"
+          ),
+          lcarsRadioToggle("date_lines", h6("X-Axis Lines/Labels:"),
+                           c("Months" = "m", "Weeks" = "w", "Days" = "d"),
+                           label_color = "#CCCC55",
+                           width = 150
+          )
+        ),
 
 # the actual plot itself
-    fluidRow(
-      column(12,
-        plotOutput("averages_plot", height = "500px",
-          dblclick = "click_averages",
-          brush = brushOpts(
-            "brush_averages",
-            resetOnNew = TRUE
+        fluidRow(
+          column(12,
+            plotOutput("averages_plot", height = "500px",
+                        dblclick = "click_averages",
+                        brush = brushOpts(
+                                "brush_averages",
+                                resetOnNew = TRUE
+                                )
+            )
+          )
+        ),
+
+# displays the conversion chart (a1c to eag) on the right side
+        right_inputs = inputColumn(
+          lcarsRect(
+            "eAG = estimated average glucose",
+            text_size = 10,
+            round = "left",
+            height = 21
+          ),
+          lcarsRect(
+            tableOutput("a1c_eag"),
+            round = c("both"),
+            color = "#000000",
+            text_color = "#FFCC66",
+            text_size = 14,
+            height = 380,
+            width = 140
+          ),
+          lcarsRect(
+            height = 100,
+            color = "golden-tanoi"
           )
         )
       )
     ),
 
+    nav_spacer(),
 
-# displays the conversion chart (a1c to eag) on the right side
-    right_inputs = inputColumn(
-      lcarsRect(
-        "eAG = estimated average glucose",
-        text_size = 10,
-        round = "left",
-        height = 21
-      ),
-      lcarsRect(
-        tableOutput("a1c_eag"),
-        round = c("both"),
-        color = "#000000",
-        text_color = "#FFCC66",
-        text_size = 14,
-        height = 380,
-        width = 140
-      ),
-      lcarsRect(
-        height = 100,
-        color = "golden-tanoi"
-      )
-    )
-  ),
+# page for the violin plot
+    nav_panel("Glycemic Variability",
+      tags$hr(),
+      tags$br(),
 
-
-# box for the violin plot
-  lcarsBox(
-    corners = c(1, 2, 3, 4),
-    color = c("#CCCC55", "#CCCC55", "#CCCC55", "#CCCC55"),
-    sides = c(4),
-    side_color = c("#000000", "#000000", "#000000", "#000000"),
+      lcarsBox(
+        corners = c(1, 2, 3, 4),
+        color = c("#CCCC55", "#CCCC55", "#CCCC55", "#CCCC55"),
+        sides = c(4),
+        side_color = c("#000000", "#000000", "#000000", "#000000"),
 
 # info button in bottom right
-    subtitle = uiOutput("help_violins"),
+        subtitle = uiOutput("help_violins"),
 
 # the plot, the time range selector, and the dynamic display of daily mean and sd
-    fluidRow(
-      column(9,
-        plotOutput("glycemic_var", height = 550, click = "violin_click")
-      ),
-      inputColumn(
-        column(3,
-          lcarsRect(height = 50, color = "#000000"),
-          dateRangeInput(
-            "range", h4("Date Range"),
-             start = Sys.Date() - 7,
-             end = Sys.Date(),
-             width = 210
+        fluidRow(
+          column(9,
+                 plotOutput("glycemic_var", height = 550, click = "violin_click")
           ),
-          lcarsRect(height = 15, color = "#000000"),
-          htmlOutput("violin_label")
+          inputColumn(
+            column(3,
+                   lcarsRect(height = 50, color = "#000000"),
+                   dateRangeInput(
+                     "range", h4("Date Range"),
+                     start = Sys.Date() - 7,
+                     end = Sys.Date(),
+                     width = 210
+                   ),
+                   lcarsRect(height = 15, color = "#000000"),
+                   htmlOutput("violin_label")
+            )
+          )
         )
       )
+    ),
+
+    nav_spacer(),
+
+    nav_panel("Daily Report",
+      tags$hr(),
+      tags$br(),
     )
   ),
+
+
+
 
 
 # box for the bar charts
@@ -545,25 +611,30 @@ server <- function(input, output, session) {
   })
 
 
-# instructions for downloading/uploading raw data (beneath the bracket)
-  output$instructions <- renderUI ({
-    if (input$instructions == TRUE){
-      div(id = "instruct",
-        h4("HOW TO DOWNLOAD RAW DEXCOM CGM DATA:"),
-        p("Step 1: Log in to Dexcom Clarity. On the far right side of the 'Overview'
+# instructions for downloading/uploading raw data (modal)
+  observeEvent(input$instructions, {
+    req(input$instructions == TRUE)
+    showModal(
+      modalDialog(
+        title = h4("HOW TO UPLOAD DEXCOM CGM DATA", style = "color: #000000;"),
+        div(
+          p("Step 1: Log in to Dexcom Clarity. On the far right side of the 'Overview'
           page, just above the 'Sensor Usage' widget, is an icon that looks like
-          a spreadsheet with an arrow pointing right."),
-        p("Step 2: Click that icon, select a date range, then press export. Dexcom
+          a spreadsheet with an arrow pointing right.", style = "color: #000000;"),
+          p("Step 2: Click that icon, select a date range, then press export. Dexcom
           only allows downloads of up to 90 days worth of data at a time, so if you
           would like to analyze a longer timespan, repeat this step to download
-          multiple 90 day datasets."),
-        p("Step 3:  The file will automatically open with Numbers. Go to File >
-          Export To > Excel to convert it to the correct format."),
-        p("Step 4: Name the file whatever you want, then come back here and hit
-          import! Hold down command to select multiple files at once."),
-        style = "font-size: 16px;"
+          multiple 90 day datasets.", style = "color: #000000;"),
+          p("Step 3:  The file will automatically open in Numbers. Go to File >
+          Export To > Excel to convert it to the correct format.", style = "color: #000000;"),
+          p("Step 4: Finally, come back here and hit import! Hold down command
+            while selecting files to upload multiple files at once.", style = "color: #000000;")
+        ),
+        footer = modalButton("OKAY"),
+        size = c("m")
       )
-    }
+    )
+    updateCheckboxInput(session, "instructions", value = FALSE)
   })
 
 # conversion chart in the right column of the first box
@@ -637,6 +708,7 @@ server <- function(input, output, session) {
 
     averages <- all_data()
     averages <- averages |>
+      mutate(date = as.Date(date, '%Y-%m-%d')) |>
       group_by(date) |>
       summarize(daily_avg = mean(value))
 
@@ -654,7 +726,7 @@ server <- function(input, output, session) {
     overall_average <- round(mean(as.vector(averages()$daily_avg)))
   })
 
-# overall average title at the top of the first box
+# creates overall average title at the top of the first box
   output$overall_average <- renderText ({
     req(isTruthy(input$upload) | isTruthy(input$trial))
     paste("OVERALL AVERAGE =", overall_average(), "mg/dL")
@@ -988,6 +1060,77 @@ server <- function(input, output, session) {
   })
 
   output$violin_label <- renderUI(label())
+
+
+# daily overview graph with adjustable start time
+  output$daily <- renderPlot ({
+
+    # removing the random and very annoying T from all the date/time values
+    clarity_10_23_01_20$...2 <- str_replace_all(clarity_10_23_01_20$...2, "T", " ")
+
+    # in the app, time1 will be given by timeInput
+    # for now, using randomly selected row
+    time1 <- clarity_10_23_01_20$...2[666]
+    time2 <- as.character(as.POSIXct(time1) + hours(24))
+
+
+    clarity <- clarity_10_23_01_20 |>
+      filter(...2 >= time1 & ...2 <= time2) |>
+      rename(time = ...2, value = ...8) |>
+      mutate(time = as.POSIXct(time), value = as.numeric(value))
+
+    extrema <- c(max(clarity$value), min(clarity$value))
+
+    avg <- mean(clarity$value)
+
+    capt <- paste0("Highest Value = ", extrema[1], "      Lowest Value = ", extrema[2])
+
+    daily_overview <- ggplot() +
+      geom_hline(aes(yintercept = 180), linetype = "dotted", color = "#ED1D24", linewidth = 0.6) +
+      geom_hline(aes(yintercept = 70), linetype = "dotted", color = "#ED1D24", linewidth = 0.6) +
+      geom_line(clarity, mapping = aes(x = time, y = value), linewidth = 0.5, color = "#1a1c1a") +
+      scale_y_continuous(breaks = seq(40, 400, 60), limits = c(40,400), expand = c(0,0)) +
+      scale_x_datetime(
+        date_labels = "%d %b, %H:%M",
+        date_minor_breaks = "hour",
+        expand = c(0, 0)
+      ) +
+      labs(
+        title = "Daily Overview",
+        subtitle = "Oct. 24th to 25th",
+        x = "Date/Time",
+        y = "Blood Glucose (mg/dL)",
+        caption = capt
+      ) +
+      theme_lcars_light() +
+      theme(
+        panel.grid.major = element_line(linewidth = 0.1, color = "#1a1c1a"),
+        panel.grid.minor = element_line(linewidth = 0.05, color = "#444444"),
+        panel.border = element_rect(linewidth = 0.75),
+        plot.margin = margin(14, 14, 14, 14),
+        plot.background = element_rect(color = "#1a1c1a", linewidth = 1.2),
+        plot.title = element_text(size = 18, hjust = 0.5),
+        plot.subtitle = element_text(margin = margin(0, 0, 10, 0), hjust = 0.5),
+        text = element_text(family = "sans"),
+        axis.title.x = element_text(size = 12, margin = margin(t = 10, r = 0, b = 0, l = 0)),
+        axis.title.y = element_text(size = 12, margin = margin(t = 0, r = 10, b = 0, l = 0))
+      )
+    daily_overview
+  })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
