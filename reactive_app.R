@@ -11,6 +11,10 @@ library(zoo)
 library(stats)
 library(hpfilter)
 library(showtext)
+library(bslib)
+library(shinyTime)
+library(lubridate)
+library(stringr)
 # a lotttt of packages
 
 font_add_google("Antonio", "Antonio")
@@ -53,7 +57,7 @@ theme_averages_plot <- function() {
 # function for cleaning the data
   reshape <- function(file) {
     file[-(1:19),] |>
-      mutate(date = ...2, value = as.numeric(...8)) |>
+      mutate(date = str_replace_all(...2, "T", " "), value = as.numeric(...8)) |>
       select(date, value) |>
       filter(!is.na(value))
   }
@@ -469,46 +473,29 @@ ui <- lcarsPage(force_uppercase = TRUE,
     nav_panel("Daily Report",
       tags$hr(),
       tags$br(),
+
+      lcarsBox(
+        corners = c(1, 2, 3, 4),
+        sides = c(1, 2, 3, 4),
+        color = c("#FF9900",  "#FFCC66",  "#FF9900",  "#FF9900"),
+        side_color = c( "#FFCC66",  "#FFCC66", "#FF9900", "#FF9900"),
+        title_color = "#FFCC66",
+
+        title = textOutput("daily_overview_date"),
+        left_inputs = inputColumn(
+          dateInput("overview_date", h4("Date"), width = 150),
+        ),
+
+        fluidRow(
+          plotOutput("daily", height = "500px",
+                     hover = hoverOpts("daily_hover")
+          )
+        )
+
+      )
     )
   ),
-
-
-
-
-
-# box for the bar charts
-  lcarsBox(
-    corners = c(1, 2, 3, 4),
-    color = c("#AA99FF", "#AA99FF", "#AA99FF", "#AA99FF"),
-    sides = c(1, 2, 3, 4),
-
-# info button
-    subtitle = uiOutput("help_bars"),
-
-# bar charts displaying distribution of time in range vs out
-    fluidRow(
-      column(1, lcarsRect(color = "#000000")),
-      column(5, plotOutput("range_time", height = 450)),
-      column(5, plotOutput("range_percent", height = 450))
-    ),
-
-    right_inputs = inputColumn(
-      lcarsRect(height = 200, color = "#7788FF"),
-    ),
-
-# upper and lower limit selectors for the charts
-    left_inputs = inputColumn(
-      numericInput("high_lim", h4("'High' Limit"), value = 180, width = 150),
-      lcarsRect(
-        height = 14,
-        width = 150,
-        color = "#AA99FF",
-        round = c("both")
-      ),
-      numericInput("low_lim", h4("'Low' Limit"), value = 70, width = 150),
-      lcarsRect(height = 67, color = "#7788FF"),
-    )
-  )
+  tags$br()
 )
 
 # The aesthetics of this app are based on the LCARS computer interface
@@ -957,6 +944,7 @@ server <- function(input, output, session) {
   {violin_data <- all_data()
 
    violin_data <- violin_data |>
+     mutate(date = as.Date(date, '%Y-%m-%d')) |>
      filter(between(date, input$range[1], input$range[2])) |>
      group_by(date) |>
      mutate(value = as.numeric(value), date = as.factor(date))
@@ -1062,33 +1050,53 @@ server <- function(input, output, session) {
   output$violin_label <- renderUI(label())
 
 
+
+
+
+
+  overview_dttm1 <- reactiveVal()
+  overview_dttm2 <- reactiveVal()
+
+
+  observeEvent({
+    input$upload
+    input$trial
+  }, {
+    overview_dttm1(all_data()$date[1])
+    overview_dttm2(as.POSIXct(all_data()$date[1]) + hours(24))
+
+    updateDateInput(session, inputId = "overview_date", value = as_date(all_data()$date[1]))
+  })
+
+
+  observeEvent({
+    input$overview_date
+  }, {
+    overview_dttm1(input$overview_date)
+    overview_dttm2(input$overview_date + hours(24))
+  })
+
+
+
 # daily overview graph with adjustable start time
   output$daily <- renderPlot ({
 
-    # removing the random and very annoying T from all the date/time values
-    clarity_10_23_01_20$...2 <- str_replace_all(clarity_10_23_01_20$...2, "T", " ")
-
-    # in the app, time1 will be given by timeInput
-    # for now, using randomly selected row
-    time1 <- clarity_10_23_01_20$...2[666]
-    time2 <- as.character(as.POSIXct(time1) + hours(24))
-
-
-    clarity <- clarity_10_23_01_20 |>
-      filter(...2 >= time1 & ...2 <= time2) |>
-      rename(time = ...2, value = ...8) |>
+    overview_data <- all_data()
+    overview_data <- overview_data |>
+      filter(date >= overview_dttm1() & date <= overview_dttm2()) |>
+      rename(time = date) |>
       mutate(time = as.POSIXct(time), value = as.numeric(value))
 
-    extrema <- c(max(clarity$value), min(clarity$value))
+    extrema <- c(max(overview_data$value), min(overview_data$value))
 
-    avg <- mean(clarity$value)
+    avg <- mean(overview_data$value)
 
     capt <- paste0("Highest Value = ", extrema[1], "      Lowest Value = ", extrema[2])
 
     daily_overview <- ggplot() +
       geom_hline(aes(yintercept = 180), linetype = "dotted", color = "#ED1D24", linewidth = 0.6) +
       geom_hline(aes(yintercept = 70), linetype = "dotted", color = "#ED1D24", linewidth = 0.6) +
-      geom_line(clarity, mapping = aes(x = time, y = value), linewidth = 0.5, color = "#1a1c1a") +
+      geom_line(overview_data, mapping = aes(x = time, y = value), linewidth = 0.5, color = "#1a1c1a") +
       scale_y_continuous(breaks = seq(40, 400, 60), limits = c(40,400), expand = c(0,0)) +
       scale_x_datetime(
         date_labels = "%d %b, %H:%M",
@@ -1117,9 +1125,6 @@ server <- function(input, output, session) {
       )
     daily_overview
   })
-
-
-
 
 
 
