@@ -1,117 +1,211 @@
 
-# some pump data analysis for a change
+library(tidyverse)
+library(ggplot2)
+library(stats)
 
+
+# prepping the data
 tidepool_basal <- tidepool_new |>
-  rename(time = 'Local Time', duration_sec = 'Duration (mins)', rate = Rate, supp_rate = `Suppressed Rate`, payload = Payload) |>
-  select(time, duration_sec, rate, supp_rate, payload) |>
-  mutate(bool = grepl('"algorithm_rate":null', payload), nah = is.na(supp_rate),
-         duration_sec = duration_sec*60)
+  rename(time = 'Local Time', duration_min = 'Duration (mins)',
+         actual_rate = Rate, scheduled_rate = `Suppressed Rate`, type = 'Delivery Type') |>
+  select(time, duration_min, actual_rate, scheduled_rate, type)
 
-tidepool_basal$supp_rate[tidepool_basal$bool == TRUE] <-
-  tidepool_basal$rate[tidepool_basal$bool]
+tidepool_basal$scheduled_rate[is.na(tidepool_basal$scheduled_rate)] <-
+  tidepool_basal$actual_rate[is.na(tidepool_basal$scheduled_rate)]
 
-tidepool_basal$supp_rate[tidepool_basal$nah == TRUE] <-
-  tidepool_basal$rate[tidepool_basal$nah]
+tidepool_basal <- tidepool_basal |>
+  select(time, duration_min, actual_rate, scheduled_rate) |>
+  mutate(match = (scheduled_rate == actual_rate))
 
+
+################################################################################
+
+daily_basal <- tidepool_basal |>
+  mutate(date = substring()) |>
+  group_by(date)
+
+ggplot(tidepool_basal, aes(x = time)) +
+  geom_line(aes(y = scheduled_rate)) +
+  geom_line(aes(y = actual_rate)) +
+  theme_bw()
+
+
+################################################################################
+
+# comparing the ratio of time in which the pre-programmed basal is unchanged,
+# overridden, or suspended (manually or as a result of pump error)
 
 coordination <- tidepool_basal |>
-  select(time, duration_sec, rate, supp_rate) |>
-  mutate(match = (supp_rate == rate)) |>
   group_by(match) |>
-  summarize(total_secs = sum(as.integer(duration_sec))) |>
-  mutate(total_hrs = total_secs/3600, total_days = total_secs/86400) |>
-  mutate(percentage = total_secs/sum(total_secs), class = "time")
-
-coordination$match[coordination$match == TRUE] <- "aye"
-coordination$match[coordination$match == FALSE] <- "nay"
-coordination$match[is.na(coordination$match)] <- "zzz"
-
-coordination <- coordination |>
-  arrange(match) |>
-  mutate(state = c("Pre-Programmed Basal", "Control IQ Basal Overide", "Pump Error (Delivery Paused)"))
+  summarize(total_mins = sum(as.integer(duration_min))) |>
+  mutate(total_hrs = total_mins/60, total_days = total_mins/1440) |>
+  mutate(percentage = total_mins/sum(total_mins), class = "time") |>
+  mutate(match = replace(match, match == TRUE, "Scheduled" )) |>
+  mutate(match = replace(match, match == FALSE, "Overidden" )) |>
+  mutate(match = replace(match, is.na(match), "Suspended" ))
 
 
-basal_state_total <- ggplot(coordination, aes(x = match, y = total_hrs, fill = match)) +
-  geom_col() +
+basal_state_total <- ggplot(coordination, aes(x = match, y = percentage, fill = match)) +
+  geom_col(color = "black", linewidth = .25) +
   scale_fill_manual(
-    "States",
+    "Type of Delivery",
     values = c("#BC4411", "#ffDD77", "#BBCC55"),
-    breaks = c("zzz", "nay", "aye"),
-    labels = c("Pump Error (Delivery Paused)", "Control IQ Basal Overide", "Pre-Programmed Basal")
+    breaks = c("Suspended", "Overidden", "Scheduled"),
+    labels = c("Basal Suspended", "Control IQ Overide", "Scheduled Rate")
   ) +
-  scale_y_continuous(limits = c(0, 160), breaks = seq(0, 180, 20)) +
   labs(
-    title = "Time Spent in Alternate Basal States",
-    y = "Total Hours"
+    title = "Ratio of Time Spent in Alternate Basal States",
+    y = "Percentage"
   ) +
   theme_bw() +
   theme(
     plot.title = element_text(size = 16, face = "bold"),
+    axis.title.y = element_text(size = 12, margin = margin(0, 10, 0, 0), face = "bold"),
     axis.title.x = element_blank(),
-    axis.title.y = element_text(size = 14, margin = margin(0, 10, 0, 0), face = "bold"),
-    axis.text.x = element_blank(),
-    legend.title = element_text(size = 14, face = "bold"),
+    axis.text.x = element_text(size = 10, face = "bold"),
+    legend.title = element_text(size = 12, face = "bold"),
     legend.text = element_text(size = 10),
+    legend.key.spacing.y = unit(1, "mm"),
     plot.margin = margin(12, 12, 12, 12)
   )
 
 basal_state_total
 
+# conclusion:
+# seems like a promising way to track one's dependency on the pump's automation
+# and/or to determine whether their pre-programmed basal regimen needs adjusting
+# it would be helpful to know what the "normal" amount of control iq activity is
 
 
-basal_state_percent <- ggplot(coordination, aes(x = match, y = percentage, fill = match)) +
-  geom_col() +
-  scale_fill_manual(
-    "States",
-    values = c("#BC4411", "#ffDD77", "#BBCC55"),
-    breaks = c("zzz", "nay", "aye"),
-    labels = c("Pump Error (Delivery Paused)", "Control IQ Basal Overide", "Pre-Programmed Basal")
-  ) +
-  scale_y_continuous(limits = c(0, .65), breaks = seq(0, .7, .10)) +
+###############################################################################
+
+
+# comparing the frequency of automatic basal decreases vs increases
+
+more_or_less <- tidepool_basal |>
+  filter(match == FALSE) |>
+  mutate(difference = replace(match, actual_rate > scheduled_rate, "higher")) |>
+  mutate(difference = replace(difference, actual_rate < scheduled_rate, "lower")) |>
+  group_by(difference) |>
+  summarize(total_mins = sum(as.integer(duration_min))) |>
+  mutate(total_hrs = total_mins/60, total_days = total_mins/1440) |>
+  mutate(percentage = total_mins/sum(total_mins), class = "time")
+
+more_or_less_plot <- ggplot(more_or_less, aes(x = class, y = percentage, fill = difference)) +
+  geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
+  theme_bw()
+
+more_or_less_plot
+
+# conclusion:
+# this data is complicated by the fact that the algorithm can only correct for
+# lows by decreasing the basal rate but for highs it can use automatic boluses
+# as well and therefore (i guess) is less likely to fiddle with the basal to
+# correct highs. this makes it difficult to come to any real conclusion about
+# whether or not one's scheduled basal rates are (generally speaking) too high
+# or too low. bummer.
+
+
+###############################################################################
+
+
+
+# comparing mean glucose value during times when the pump isn't connected to
+# the cgm vs when it is
+bg_data <- tidepool_cgm |>
+  rename(time = 'Local Time', bg_value = Value, payload = Payload) |>
+  select(time, bg_value, payload) |>
+  mutate(backfill = grepl("Backfill", payload)) |>
+  group_by(backfill) |>
+  summarize(avg = mean(bg_value))
+
+
+avg_point <- ggplot(bg_data, aes(x = backfill, y = avg, shape = backfill)) +
+  geom_point(size = 3) +
+  scale_y_continuous(limits = c(140, 164), breaks = seq(0, 168, 2)) +
   labs(
-    title = "Time Spent in Alternate Basal States",
-    y = "Time (percentage)"
+    y = "Average CGM Reading (mg/dL)",
+    x = "Backfill"
   ) +
   theme_bw() +
   theme(
     plot.title = element_text(size = 16, face = "bold"),
-    axis.title.x = element_blank(),
     axis.title.y = element_text(size = 14, margin = margin(0, 10, 0, 0), face = "bold"),
-    axis.text.x = element_blank(),
-    legend.title = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 10),
-    plot.margin = margin(12, 12, 12, 12)
+    axis.title.x = element_text(size = 14, margin = margin(10, 0, 0, 0), face = "bold"),
+    plot.margin = margin(12, 12, 12, 12),
+    legend.position = "none"
   )
 
-basal_state_percent
+avg_point
+
+
+full_data <- full_join(tidepool_3, tidepool_cgm)
+
+
+bg_data <- full_data |>
+  rename(time = 'Local Time', bg_value = Value, payload = Payload) |>
+  select(time, bg_value, payload) |>
+  mutate(backfill = grepl("Backfill", payload)) |>
+  group_by(backfill) |>
+  summarize(avg = mean(bg_value))
+
+
+backfill_col <- tibble(backfill = full_data$Value[grepl("Backfill", full_data$Payload) == TRUE])
+backfill_col$ID <- seq.int(nrow(backfill_col))
+
+no_backfill_col <- tibble(instant = full_data$Value[grepl("Backfill", full_data$Payload) == FALSE])
+no_backfill_col$ID <- seq.int(nrow(no_backfill_col))
+
+all_values <- tibble(all = full_data$Value)
+all_values$ID <- seq.int(nrow(all_values))
+
+data_density <- full_join(x = backfill_col, y = no_backfill_col, by = join_by(ID))
+
+data_density <- data_density |>
+  full_join(all_values, by = join_by(ID)) |>
+  relocate(ID, .before = backfill)
 
 
 
+# i don't know if this works
+backfill_vec <- full_data$Value[grepl("Backfill", full_data$Payload) == TRUE]
+no_backfill_vec <- full_data$Value[grepl("Backfill", full_data$Payload) == FALSE]
+wilcox.test(x = backfill_vec, y = no_backfill_vec, conf.level = 0.99,
+            alternative = "greater", paired = FALSE)
+t.test(x = backfill_vec, y = no_backfill_vec, alternative = "greater", conf.level = 0.99)
 
 
-
-# less good methinks
-control_basal_bar <- ggplot(coordination, aes(x = class, y = total_hrs, fill = match)) +
-  geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
-  scale_fill_manual(
-    "Basal Setting",
-    values = c("#BC4411", "#ffDD77", "#BBCC55"),
-    breaks = c("zzz", "nay", "aye"),
-    labels = c("Pump Error (Delivery Paused)", "Control IQ Basal Overide", "Pre-Programmed Basal")
-  ) +
+# but this definitely does
+avg_distribution <- ggplot(data_density) +
+  geom_density(aes(x = instant, fill = "blue"), color = "blue", alpha = 0.2) +
+  geom_density(aes(x = backfill, fill = "red"), color = "red", alpha = 0.2) +
+  geom_vline(color = "blue", linetype = "dashed", xintercept = as.numeric(bg_data$avg[1])) +
+  geom_vline(color = "red", linetype = "dashed", xintercept = as.numeric(bg_data$avg[2])) +
   labs(
-    y = "Percentage of Time"
-  ) + theme_bw() +
+    x = "Blood Glucose Value (mg/dL)",
+    y = "Density",
+    title = "Overall Distribution of CGM Readings (9/22/24 to 10/03/24)",
+    subtitle = "(differentiated by whether the insulin pump was actively recieving CGM data at the time)"
+  ) +
+  scale_fill_manual(
+    "Timing",
+    values = c("blue", "red"),
+    labels = c("Instantaneous", "Backfilled")
+  ) +
+  scale_x_continuous(
+    breaks = seq(50, 400, 50),
+    minor_breaks = c(as.numeric(bg_data$avg[1]), as.numeric(bg_data$avg[2]))
+  ) +
+  theme_bw() +
   theme(
-    axis.title.x = element_blank(),
-    axis.text.x = element_blank(),
+    plot.title = element_text(size = 16, face = "bold"),
+    axis.title.y = element_blank(),
     axis.text.y = element_blank(),
-    axis.title.y = element_text(size = 16, margin = margin(0, 10, 0, 0)),
-    legend.title = element_text(size = 16),
-    legend.text = element_text(size = 12),
-
+    axis.title.x = element_text(size = 12, margin = margin(10, 0, 0, 0), face = "bold"),
+    plot.margin = margin(12, 12, 12, 12),
+    legend.key.spacing.y = unit(1, "mm")
   )
 
-control_basal_bar
+avg_distribution
 
 

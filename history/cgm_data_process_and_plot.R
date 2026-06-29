@@ -2,8 +2,9 @@ library(tidyverse)
 library(ggplot2)
 library(zoo)
 
-# earlier version for the code of the first averages plot 
-# outdated but interesting
+# earlier version of the code for the first averages plot
+# outdated but interesting as an artifact
+
 
 # conjunction junction whats ur function
   reshape <- function(cgm_data) {

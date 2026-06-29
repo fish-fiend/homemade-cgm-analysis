@@ -34,21 +34,6 @@ theme_averages_plot <- function() {
   )
 }
 
-theme_daily_overview <- function() {
-  theme(panel.grid.major = element_line(linewidth = 0.1, color = "#1a1c1a"),
-        panel.grid.minor = element_line(linewidth = 0.05, color = "#444444"),
-        panel.border = element_rect(linewidth = 0.75),
-        plot.margin = margin(40, 20, 20, 20),
-        plot.background = element_rect(color = "#1a1c1a", linewidth = 1.2),
-        plot.title = element_text(size = 30, hjust = 0.5),
-        plot.subtitle = element_text(margin = margin(0, 0, 10, 0), hjust = 0.5),
-        axis.text = element_text(size = 16),
-        axis.title = element_text(size = 20),
-        axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
-        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
-        text = element_text(family = "Antonio")
-      )
-}
 
 # A1C to eAG conversion chart
   conversion_chart <- data.frame(
@@ -272,7 +257,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
 
   tags$hr(),
-  titlePanel(h1("PRETEND THIS IS A TITLE")),
+  titlePanel(h1("WHEN DEXCOM CLARITY JUST ISN'T CUTTING IT")),
   tags$hr(),
   tags$hr(),
 
@@ -337,7 +322,7 @@ ui <- lcarsPage(force_uppercase = TRUE,
                width = 250
              ),
              sliderInput(
-               "rect", h4("Target Average BG Range"),
+               "rect", h4("Target Average Daily BG Range"),
                min = 90, max = 180,
                value = c(100,165),
                step = 5,
@@ -486,39 +471,44 @@ ui <- lcarsPage(force_uppercase = TRUE,
 
     nav_spacer(),
 
-    nav_panel("Daily Report",
+    nav_panel("Time in Range",
       tags$hr(),
       tags$br(),
 
       lcarsBox(
         corners = c(1, 2, 3, 4),
+        color = c("#AA99FF", "#AA99FF", "#AA99FF", "#AA99FF"),
         sides = c(1, 2, 3, 4),
-        color = c("#FFCC66",  "#FF9900",  "#FF9900",  "#FF9900"),
-        side_color = c( "#FFCC66",  "#FF9900", "#FF9900", "#FFCC66"),
-        title_color = "#FFCC66",
 
-        title = textOutput("daily_title"),
-        left_inputs = inputColumn(
-          dateInput("overview_date", h4("Date"), width = 150),
+        # info button
+        subtitle = uiOutput("help_bars"),
+
+        # bar charts displaying distribution of time in range vs out
+        fluidRow(
+          column(1, lcarsRect(color = "#000000")),
+          column(5, plotOutput("range_time", height = 450)),
+          column(5, plotOutput("range_percent", height = 450))
         ),
 
-        fluidRow(
-          column(12,
-            plotOutput("daily", height = "500px",
-                        hover = hoverOpts("daily_hover")
-            )
-          )
+        right_inputs = inputColumn(
+          lcarsRect(height = 110, color = "#7788FF"),
+          numericInput("bars", h4("Average Daily BG Upper Limit"), value = 150, width = 150)
+        ),
+
+        # upper and lower limit selectors for the charts
+        left_inputs = inputColumn(
+          numericInput("high_lim", h4("'High' Limit"), value = 180, width = 150),
+          lcarsRect(
+            height = 14,
+            width = 150,
+            color = "#AA99FF",
+            round = c("both")
+          ),
+          numericInput("low_lim", h4("'Low' Limit"), value = 70, width = 150),
+          lcarsRect(height = 67, color = "#7788FF"),
         )
-
-      ),
-      subtitle = uiOutput("help_daily")
-    ),
-
-    nav_spacer(),
-
-    nav_panel("Comparison",
-      tags$hr(),
-      tags$br())
+      )
+    )
   ),
   tags$br()
 )
@@ -553,9 +543,9 @@ server <- function(input, output, session) {
       hover_color = "eggplant"
     )
   })
-  output$help_daily <- renderUI ({
+  output$help_bars <- renderUI ({
     lcarsButton(
-      "help_daily",
+      "help_bars",
       label = "",
       icon = icon(name = "info", style = "color: #FFFFCD;"),
       color = "#222222",
@@ -596,25 +586,24 @@ server <- function(input, output, session) {
           p("- click on a blob to reveal the average glucose value and standard
             deviation of data from that day", style = "color: #000000;"),
           hr(),
-          p("Disclaimer: recommended date range is around 10 days or less.", style = "color: #000000; font-size: 12px;")
+          p("Disclaimer: for purposes of readability, recommended date range is around 10 days or less.", style = "color: #000000; font-size: 12px;")
         ),
         footer = modalButton("DISMISS"),
         size = c("m")
       )
     )
   })
-  observeEvent(input$help_daily, {
+  observeEvent(input$help_bars, {
     showModal(
       modalDialog(
-        title = h4("INFO — DAILY OVERVIEW", style = "color: #000000;"),
+        title = h4("INFO — TIME IN RANGE", style = "color: #000000;"),
         div(
-          p("- the plot on the left shows the distribution of time spent very high,
-            high, in range, low, and very low", style = "color: #000000;"),
+          p("- the plot on the left shows the distribution of time spent Very High,
+            High, In Range, Low, and Very Low", style = "color: #000000;"),
           p("- the high and low limits can be adjusted with the numeric inputs
             to the left", style = "color: #000000;"),
-          p("- the plot on the right shows the percent of days where the daily
-            average is at or lower than the limit specified with the slider at
-            the top right of the page", style = "color: #000000;")
+          p("- the plot on the right shows the percent of days where your daily
+            average value is at or lower than the value specified by the numeric input to the right", style = "color: #000000;")
         ),
         footer = modalButton("OKAY"),
         size = c("m")
@@ -660,7 +649,7 @@ server <- function(input, output, session) {
 # this creates a list of my sample data so people can see the graphs and
 # interact with them without having to upload their own data
   trial_files <- eventReactive(input$trial, {
-    trial_files <- c("www/clarity_01.21_04.19.xlsx", "www/clarity_04.20_07.17.xlsx")
+    trial_files <- c("www/c_04.04.25_07.02.25.xlsx", "www/c_07.03.25_09.30.25.xlsx")
     trial_files <- lapply(trial_files, read_excel)
   })
 
@@ -1076,89 +1065,87 @@ server <- function(input, output, session) {
 
 
 
+  # stacked bar chart showing the ratio of overall time spent high, in range, and low
+  # adjusts with numeric inputs on the side
+  output$range_time <- renderPlot({
+    bar_time <- all_data()
+
+    bar_time <- bar_time |>
+      mutate(class = "time", range = value) |>
+      mutate(range = replace(range, range > 250, 4)) |>
+      mutate(range = replace(range, range > input$high_lim & range != 4, 3 )) |>
+      mutate(range = replace(range, range <= input$high_lim & range >= input$low_lim, 2 )) |>
+      mutate(range = replace(range, range < input$low_lim & range >= 50, 1)) |>
+      mutate(range = replace(range, range < 50 & range >= 40, 0)) |>
+      mutate(range = as.character(range))
 
 
-  overview_dttm1 <- reactiveVal()
-  overview_dttm2 <- reactiveVal()
-
-  observeEvent({
-    input$upload
-    input$trial
-  }, {
-    overview_dttm1(as.POSIXct(all_data()$date[1], tz = ""))
-    overview_dttm2(as.POSIXct(all_data()$date[1], tz = "") + hours(24))
-
-    updateDateInput(session, inputId = "overview_date", value = as_date(all_data()$date[1]))
-  })
-
-
-  observeEvent({
-    input$overview_date
-  }, {
-    all_date_data <- all_data() |>
-      select(date) |>
-      mutate(date = as.Date(date))
-
-    if (input$overview_date %in% all_date_data$date == TRUE) {
-      overview_dttm1(as.POSIXct(input$overview_date) + hours(8))
-      overview_dttm2(as.POSIXct(input$overview_date) + hours(32))
-    }
-    else {
-      showModal(
-        modalDialog(
-          paste("TO DISPLAY GRAPH, PLEASE SELECT A DATE BETWEEN", as.character(first_date()), "AND", as.character(last_date())),
-          footer = modalButton("OKAY"),
-          size = c("s")
+    range_time <- ggplot(bar_time, aes(x = class, y = value, fill = range)) +
+      geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
+      scale_fill_manual(
+        values = c("#BC4411","#ffcc66", "#99CCFF", "#CD99CE", "#cc6699"),
+        breaks = c("4", "3", "2", "1", "0"),
+        labels = c(
+          "Very High (> 250 mg/dL)",
+          paste("High (>", input$high_lim, "mg/dL)"),
+          "In Range",
+          paste("Low (<", input$low_lim, "mg/dL)"),
+          "Very Low (< 50 mg/dL)"
         )
-      )
-    }
-  })
-
-  output$daily_title <- renderText({
-    format(as.Date(overview_dttm1()), "%B %d, %Y")
-  })
-
-# daily overview graph
-  output$daily <- renderPlot ({
-
-    overview_data <- all_data()
-    overview_dttm1 <- as.POSIXct(overview_dttm1(), tz = "")
-    overview_dttm2 <- as.POSIXct(overview_dttm2(), tz = "")
-
-    overview_data <- overview_data |>
-      filter(date >= overview_dttm1 & date <= overview_dttm2) |>
-      mutate(time = as.POSIXct(date), value = as.numeric(value))
-
-    extrema <- c(max(overview_data$value), min(overview_data$value))
-
-    avg <- mean(overview_data$value)
-
-    capt <- paste0("Highest Value = ", extrema[1], "      Lowest Value = ", extrema[2])
-
-    daily_overview <- ggplot() +
-      annotate(
-        "rect",
-        xmin = overview_dttm1, xmax = overview_dttm2,
-        ymin = 70, ymax = 180,
-        fill = "#99DDFF",
-        alpha = 0.25
-      ) +
-      geom_line(overview_data, mapping = aes(x = time, y = value), linewidth = 0.5, color = "#1a1c1a") +
-      scale_y_continuous(breaks = seq(40, 400, 60), limits = c(40,400), expand = c(0,0)) +
-      scale_x_datetime(
-        date_labels = "%H:%M",
-        date_breaks = "2 hours",
-        expand = c(0, 0)
       ) +
       labs(
-        x = "Time",
-        y = "Blood Glucose (mg/dL)",
-        caption = capt
+        caption = "Time in Range ",
+        x = NULL,
+        y = NULL
       ) +
-      theme_lcars_light() +
-      theme_daily_overview()
+      theme_lcars_dark() +
+      theme(
+        legend.title = element_blank(),
+        plot.caption = element_text(hjust = 0.5, size = 28, margin = margin(t = 15)),
+        legend.text = element_text(size = 17),
+        axis.text.x = element_blank(),
+        plot.margin = margin(32, 50, 28, 28),
+        text = element_text(family = "Antonio")
+      )
+    range_time},
+    execOnResize = TRUE
+  )
 
-    daily_overview},
+
+  # stacked bar chart showing percentage of days in range
+  # adjusts with the slider
+  output$range_percent <- renderPlot({
+    bar_averages <- averages()
+
+    bar_averages <- bar_averages |>
+      mutate(class = "time", in_range = daily_avg) |>
+      mutate(in_range = replace(in_range, in_range > input$bars, ">" )) |>
+      mutate(in_range = replace(in_range, in_range <= input$bars & in_range != ">", "<"))
+
+    range_percent <- ggplot(bar_averages, aes(x = class, y = daily_avg, fill = in_range), alpha = 0.98) +
+      geom_bar(position = position_fill(reverse = TRUE), stat = "identity") +
+      scale_fill_manual(
+        values = c("#ffcc66", "#99CCFF" ),
+        breaks = c(">", "<"),
+        labels = c(
+          paste("Daily Avg. >", input$bars, "mg/dL"),
+          paste("Daily Avg. <", input$bars, "mg/dL"))
+      ) +
+      labs(
+        caption = "Days in Range",
+        x = NULL,
+        y = NULL
+      ) +
+      theme_lcars_dark() +
+      theme(
+        legend.title = element_blank(),
+        plot.caption = element_text(hjust = 0.5, size = 28, margin = margin(t = 15)),
+        legend.text = element_text(size = 17),
+        axis.text.x = element_blank(),
+        plot.margin = margin(28, 35, 28, 28),
+        text = element_text(family = "Antonio")
+      )
+    range_percent},
     execOnResize = TRUE
   )
 
